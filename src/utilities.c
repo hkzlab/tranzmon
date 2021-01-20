@@ -35,12 +35,13 @@ void monitor_printU8(uint8_t data, char *str) {
 	}
 }
 
+// Lifted from the Tranz 330 library utilities
 void delay_ms(uint16_t delay) __naked {
     delay;
     
     __asm
-		ld hl, #2
-		add hl, sp
+		ld hl, #2  ;; First parameter
+		add hl, sp ;; Recover address of the parameter in the stack
 
         ;; Backup registers that get dirty
 		push bc

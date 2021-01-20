@@ -65,3 +65,8 @@ void disp_clear(void) {
     } while(digit_counter--);
 }
 
+void disp_print(char *str) {
+    disp_send_byte(0xAF);
+    for(uint8_t counter = 0; str[counter] && (counter < 16); counter++) disp_send_byte(str[counter]); 
+}
+

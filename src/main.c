@@ -10,7 +10,6 @@
 
 #define CMD_BUF_SIZE 15
 
-#define MONITOR_HEAD "\x1B[2J\x1B[1;1fTRANZMON 0.1\r\n"
 #define MONITOR_CMD_PROMPT "\r\n] "
 #define MONITOR_ERR_MSG "\r\nE\r\n"
 
@@ -19,7 +18,7 @@ static char mon_buff[STR_BUFF_LEN];
 static char cmd_buffer[CMD_BUF_SIZE];
 
 /******/
-void pio_isr (void) __interrupt(0x18);
+void pio_isr (void);
 void monitor_parse_command(char *cmd, uint8_t idx);
 
 /**/
@@ -27,6 +26,7 @@ void monitor_outp(uint8_t port, uint8_t data);
 uint8_t monitor_inp(uint8_t port);
 void monitor_jmp(uint8_t *addr);
 
+extern char str_appname;
 
 /** Here lies the code **/
 void sys_init(void) {
@@ -34,6 +34,8 @@ void sys_init(void) {
 	spkr_init();
 	disp_init();
 	disp_clear();
+	
+	disp_print(&str_appname);
 	
 	spkr_beep(0x2F); // Beep the speaker!
 	
@@ -198,5 +200,5 @@ uint8_t monitor_inp(uint8_t port) __naked {
 	__endasm;
 }
 */
-void pio_isr (void) __interrupt(0x18) {
+void pio_isr (void) {
 }

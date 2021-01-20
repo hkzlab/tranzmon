@@ -15,7 +15,18 @@
 	;;.globl 	_n8vem_ide_reg_rd
 	;;.globl	_n8vem_ide_reg_wr
 
+    ;; ISR to export
+    .globl _pio_isr
+
+    ;; Data to export
+    .globl _str_appname
+
 	.area	_HEADER (ABS)
+
+    ;; Strings and other static data
+    .org    0x7D00
+_str_appname:
+    .asciz  "TRANZMON V0.1"
 
 	;; Setup the function pointers at the end of the EPROM
 	.org	0x7F00
@@ -31,13 +42,23 @@
 
 	;; Reset vector
 	.org 	0x0000
+	jp  init
+	
+	;; ISR
+	.org    0x0018
+	.dw     #_pio_isr
+	
+	.org    0x0040
 init:
 	;; Stack at the top of memory.
 	ld	sp,#0xFFFF
 
-    ;; Interrupt mode 2
-    im 2
-    di
+    ;; Setup the interrupts
+    im 2  ;; Interrupt mode 2
+    xor a ;; Interrupt vectors in page 0
+    ld i,a
+    
+    di ;; Disable the interrupts for now
 
     ;; Clear the RAM
     xor a           ;; Clear register 'a'
