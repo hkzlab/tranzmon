@@ -18,7 +18,7 @@ static char mon_buff[STR_BUFF_LEN];
 static char cmd_buffer[CMD_BUF_SIZE];
 
 /******/
-void pio_isr (void);
+void pio_isr (void) __interrupt(0x18);
 void monitor_parse_command(char *cmd, uint8_t idx);
 
 /**/
@@ -200,5 +200,5 @@ uint8_t monitor_inp(uint8_t port) __naked {
 	__endasm;
 }
 */
-void pio_isr (void) {
+void pio_isr (void) __interrupt(0x18) {
 }
