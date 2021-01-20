@@ -35,3 +35,41 @@ void monitor_printU8(uint8_t data, char *str) {
 	}
 }
 
+void delay_ms(uint16_t delay) __naked {
+    delay;
+    
+    __asm
+		ld hl, #2
+		add hl, sp
+
+        ;; Backup registers that get dirty
+		push bc
+		push af
+
+        ;; Read delay from stack
+		ld c,(hl) 
+		inc hl
+		ld b,(hl)
+   
+        ;; The actual delay
+    delay_ms:
+        push bc
+        ld bc,#0x0086
+    delay_loop:
+        dec bc
+        ld a,b
+        or c
+        jr nz,delay_loop
+        pop bc
+        dec bc
+        ld a,b
+        or c
+        jr nz,delay_ms
+    
+        ;; Recover registers
+        pop af
+        pop bc
+        ret      
+    __endasm;
+}
+

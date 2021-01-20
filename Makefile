@@ -27,8 +27,8 @@ BIN_DIR = bin/
 
 INCLUDES = -I$(SRC_DIR)/include -I$(SRC_DIR)
 
-CLOC = 0x0010
-CSIZ = 0x7EF0
+CLOC = 0x0100
+CSIZ = 0x7CF0
 DLOC = 0x8000
 
 # Compilation / Assembly / Linking flags
@@ -51,14 +51,14 @@ $(BIN_DIR)/$(TARGET).hex:	$(BIN_DIR)/$(TARGET).ihx
 	$(QUIET)$(ECHO) Generating $(TARGET).ihx
 	$(QUIET)$(COPY)	$(BIN_DIR)/$(TARGET).ihx $(BIN_DIR)/$(TARGET).hex
 
-$(BIN_DIR)/$(TARGET).ihx:	$(BIN_DIR)/crt0.rel $(BIN_DIR)/main.rel $(BIN_DIR)/xmodem.rel \
-							$(BIN_DIR)/console.rel \
-							$(BIN_DIR)/utilities.rel \
-							$(BIN_DIR)/pio.rel
-	$(CCC) $(CLD_FLAGS) $(CCC_FLAGS) $(BIN_DIR)/crt0.rel $(BIN_DIR)/main.rel $(BIN_DIR)/xmodem.rel \
-		$(BIN_DIR)/console.rel \
-		$(BIN_DIR)/utilities.rel \
+$(BIN_DIR)/$(TARGET).ihx:	$(BIN_DIR)/crt0.rel $(BIN_DIR)/main.rel \
+							$(BIN_DIR)/pio.rel \
+							$(BIN_DIR)/ctc.rel \
+							$(BIN_DIR)/utilities.rel
+	$(CCC) $(CLD_FLAGS) $(CCC_FLAGS) $(BIN_DIR)/crt0.rel $(BIN_DIR)/main.rel \
 		$(BIN_DIR)/pio.rel \
+		$(BIN_DIR)/ctc.rel \
+		$(BIN_DIR)/utilities.rel \
 		-o $(BIN_DIR)/$(TARGET).ihx
 
 $(BIN_DIR)/crt0.rel: $(SRC_DIR)/crt0.s
@@ -66,18 +66,15 @@ $(BIN_DIR)/crt0.rel: $(SRC_DIR)/crt0.s
 
 $(BIN_DIR)/main.rel: $(SRC_DIR)/main.c
 	$(CCC) $(CCC_FLAGS) -c -o $(BIN_DIR) $(SRC_DIR)/main.c
-
+	
 $(BIN_DIR)/utilities.rel: $(SRC_DIR)/utilities.c
 	$(CCC) $(CCC_FLAGS) -c -o $(BIN_DIR) $(SRC_DIR)/utilities.c
 
-$(BIN_DIR)/xmodem.rel: $(SRC_DIR)/io/xmodem.c
-	$(CCC) $(CCC_FLAGS) -c -o $(BIN_DIR) $(SRC_DIR)/io/xmodem.c
-
-$(BIN_DIR)/console.rel: $(SRC_DIR)/io/console.c
-	$(CCC) $(CCC_FLAGS) -c -o $(BIN_DIR) $(SRC_DIR)/io/console.c
-
 $(BIN_DIR)/pio.rel: $(SRC_DIR)/hardware/pio.c
 	$(CCC) $(CCC_FLAGS) -c -o $(BIN_DIR) $(SRC_DIR)/hardware/pio.c
+
+$(BIN_DIR)/ctc.rel: $(SRC_DIR)/hardware/ctc.c
+	$(CCC) $(CCC_FLAGS) -c -o $(BIN_DIR) $(SRC_DIR)/hardware/ctc.c
 
 clean:
 	rm $(BIN_DIR)/*

@@ -1,4 +1,4 @@
-;; Custom CRT0 for ITHACA AUDIO Z80 CPU monitor
+;; Custom CRT0 for Tranz 330 Monitor
 ;; Taken from SDCC
 
 	.module crt0
@@ -6,18 +6,14 @@
 	.globl	_main
 
 	;; Console I/O functions to export
-	.globl  _putchar
-	.globl  _getchar
+	;;.globl  _putchar
+	;;.globl  _getchar
 
 	;; IDE functions to export
 	;;.globl	_n8vem_ide_init
 	;;.globl	_n8vem_ide_read
 	;;.globl 	_n8vem_ide_reg_rd
 	;;.globl	_n8vem_ide_reg_wr
-
-	.globl  l__INITIALIZER
-	.globl  s__INITIALIZED
- 	.globl  s__INITIALIZER
 
 	.area	_HEADER (ABS)
 
@@ -39,40 +35,35 @@ init:
 	;; Stack at the top of memory.
 	ld	sp,#0xFFFF
 
-    	;; Initialise global variables
-    	call	gsinit
+    ;; Interrupt mode 2
+    im 2
+    di
+
+    ;; Clear the RAM
+    xor a           ;; Clear register 'a'
+    ld bc,#0x8000   ;; Times that the ldir command will repeat
+    ld hl,#0x8000   ;; Point 'hl' to the start of RAM
+    ld de,#0x8001   ;; Put location of RAM+1 here
+    ld (hl),a       ;; Clear the location
+    ldir            ;; Repeat
+
+    ;; Initialise global variables
+    call	gsinit
 	call	_main
 	jp		_exit
 
+gsinit::
+    ret
+    
+_exit::
+    halt
+
 	;; Ordering of segments for the linker.
 	.area	_HOME
-	.area	_CODE
-	.area	_INITIALIZER
-	.area   _GSINIT
-	.area   _GSFINAL
-
+    .area   _CODE
 	.area	_DATA
-	.area	_INITIALIZED
-	.area	_BSEG
+	.area   _BSEG
 	.area   _BSS
 	.area   _HEAP
 
-	.area   _CODE
-
-_exit::
-	halt
-
-	.area   _GSINIT
-gsinit::
-	ld	bc, #l__INITIALIZER
-	ld	a, b
-	or	a, c
-	jr	Z, gsinit_next
-	ld	de, #s__INITIALIZED
-	ld	hl, #s__INITIALIZER
-	ldir
-gsinit_next:
-
-	.area   _GSFINAL
-	ret
 

@@ -3,7 +3,8 @@
 #include <string.h>
 
 #include <common_datatypes.h>
-#include <io/console.h>
+#include <hardware/pio.h>
+#include <hardware/ctc.h>
 
 #include "utilities.h"
 
@@ -29,11 +30,17 @@ void monitor_jmp(uint8_t *addr);
 
 /** Here lies the code **/
 void sys_init(void) {
-	__asm
-		im 2
-	__endasm;
-
 	pio_init();
+	spkr_init();
+	disp_init();
+	disp_clear();
+	
+	spkr_beep(0x2F); // Beep the speaker!
+	
+	// Enable the interrupts
+	__asm
+	    ei
+	__endasm;
 }
 
 void main(void) {
@@ -42,7 +49,9 @@ void main(void) {
 
 	// Do basic system initialization
 	sys_init();
-
+	
+	while(1);
+/*
 	console_printString(MONITOR_HEAD);
 
 	while(1) { // Endless loop
@@ -55,7 +64,7 @@ void main(void) {
 			putchar(ch); // Print it
 			
 			// Turn the letter uppercase for parsing purposes
-			if (ch >= 0x61/* && ch <= 0x7A*/) {
+			if (ch >= 0x61) {
 				ch &= 0xDF;
 			}
 
@@ -78,10 +87,11 @@ void main(void) {
 
 		}
 	}
+	*/
 }
 
 /***/
-
+/*
 void monitor_parse_command(char *cmd, uint8_t idx) {
 	uint8_t val;
 
@@ -135,8 +145,9 @@ void monitor_parse_command(char *cmd, uint8_t idx) {
 
 	return;
 }
-
+*/
 /*** Monitor Commands ***/
+/*
 void monitor_jmp(uint8_t *addr) __naked {
 	addr;
 
@@ -186,6 +197,6 @@ uint8_t monitor_inp(uint8_t port) __naked {
 		ret
 	__endasm;
 }
-
-void pio_isr (void) __interrupt(18) {
+*/
+void pio_isr (void) __interrupt(0x18) {
 }
