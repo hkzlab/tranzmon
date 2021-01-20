@@ -7,11 +7,9 @@
 
 #include "utilities.h"
 
-#define BOOTSECT_DEST_ADDRESS 0x1000
-
 #define CMD_BUF_SIZE 15
 
-#define MONITOR_HEAD "\x1B[2J\x1B[1;1fMINOS 1.1\r\n"
+#define MONITOR_HEAD "\x1B[2J\x1B[1;1fTRANZMON 0.1\r\n"
 #define MONITOR_CMD_PROMPT "\r\n] "
 #define MONITOR_ERR_MSG "\r\nE\r\n"
 
@@ -20,7 +18,7 @@ static char mon_buff[STR_BUFF_LEN];
 static char cmd_buffer[CMD_BUF_SIZE];
 
 /******/
-
+void pio_isr (void) __interrupt(0x18);
 void monitor_parse_command(char *cmd, uint8_t idx);
 
 /**/
@@ -31,6 +29,11 @@ void monitor_jmp(uint8_t *addr);
 
 /** Here lies the code **/
 void sys_init(void) {
+	__asm
+		im 2
+	__endasm;
+
+	pio_init();
 }
 
 void main(void) {
@@ -182,4 +185,7 @@ uint8_t monitor_inp(uint8_t port) __naked {
 
 		ret
 	__endasm;
+}
+
+void pio_isr (void) __interrupt(18) {
 }

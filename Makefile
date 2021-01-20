@@ -53,10 +53,12 @@ $(BIN_DIR)/$(TARGET).hex:	$(BIN_DIR)/$(TARGET).ihx
 
 $(BIN_DIR)/$(TARGET).ihx:	$(BIN_DIR)/crt0.rel $(BIN_DIR)/main.rel $(BIN_DIR)/xmodem.rel \
 							$(BIN_DIR)/console.rel \
-							$(BIN_DIR)/utilities.rel
+							$(BIN_DIR)/utilities.rel \
+							$(BIN_DIR)/pio.rel
 	$(CCC) $(CLD_FLAGS) $(CCC_FLAGS) $(BIN_DIR)/crt0.rel $(BIN_DIR)/main.rel $(BIN_DIR)/xmodem.rel \
 		$(BIN_DIR)/console.rel \
 		$(BIN_DIR)/utilities.rel \
+		$(BIN_DIR)/pio.rel \
 		-o $(BIN_DIR)/$(TARGET).ihx
 
 $(BIN_DIR)/crt0.rel: $(SRC_DIR)/crt0.s
@@ -73,6 +75,9 @@ $(BIN_DIR)/xmodem.rel: $(SRC_DIR)/io/xmodem.c
 
 $(BIN_DIR)/console.rel: $(SRC_DIR)/io/console.c
 	$(CCC) $(CCC_FLAGS) -c -o $(BIN_DIR) $(SRC_DIR)/io/console.c
+
+$(BIN_DIR)/pio.rel: $(SRC_DIR)/hardware/pio.c
+	$(CCC) $(CCC_FLAGS) -c -o $(BIN_DIR) $(SRC_DIR)/hardware/pio.c
 
 clean:
 	rm $(BIN_DIR)/*
