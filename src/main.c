@@ -5,6 +5,7 @@
 #include <common_datatypes.h>
 #include <hardware/pio.h>
 #include <hardware/ctc.h>
+#include <hardware/dart.h>
 
 #include "utilities.h"
 
@@ -31,9 +32,11 @@ extern char str_appname;
 /** Here lies the code **/
 void sys_init(void) {
 	pio_init();
-	spkr_init();
 	disp_init();
 	disp_clear();
+	spkr_init();
+	
+    clk_ser_init();
 	
 	disp_print(&str_appname);
 	

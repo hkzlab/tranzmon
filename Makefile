@@ -54,10 +54,12 @@ $(BIN_DIR)/$(TARGET).hex:	$(BIN_DIR)/$(TARGET).ihx
 $(BIN_DIR)/$(TARGET).ihx:	$(BIN_DIR)/crt0.rel $(BIN_DIR)/main.rel \
 							$(BIN_DIR)/pio.rel \
 							$(BIN_DIR)/ctc.rel \
+							$(BIN_DIR)/dart.rel \
 							$(BIN_DIR)/utilities.rel
 	$(CCC) $(CLD_FLAGS) $(CCC_FLAGS) $(BIN_DIR)/crt0.rel $(BIN_DIR)/main.rel \
 		$(BIN_DIR)/pio.rel \
 		$(BIN_DIR)/ctc.rel \
+		$(BIN_DIR)/dart.rel \
 		$(BIN_DIR)/utilities.rel \
 		-o $(BIN_DIR)/$(TARGET).ihx
 
@@ -75,6 +77,9 @@ $(BIN_DIR)/pio.rel: $(SRC_DIR)/hardware/pio.c
 
 $(BIN_DIR)/ctc.rel: $(SRC_DIR)/hardware/ctc.c
 	$(CCC) $(CCC_FLAGS) -c -o $(BIN_DIR) $(SRC_DIR)/hardware/ctc.c
+
+$(BIN_DIR)/dart.rel: $(SRC_DIR)/hardware/dart.c
+	$(CCC) $(CCC_FLAGS) -c -o $(BIN_DIR) $(SRC_DIR)/hardware/dart.c
 
 clean:
 	rm $(BIN_DIR)/*

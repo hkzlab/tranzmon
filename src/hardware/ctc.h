@@ -6,4 +6,6 @@
 void spkr_init(void);
 void spkr_beep(uint8_t time_const);
 
+void clk_ser_init(void);
+
 #endif /* _CTC_HEADER_ */
