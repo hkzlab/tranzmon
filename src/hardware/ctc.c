@@ -25,6 +25,12 @@ void spkr_beep(uint8_t time_const) {
 }
 
 void clk_ser_init(void) {
+    //CLOCK = 3.57964Mhz
+    // CLOCK/2 = 1,78982Mhz 
+    // 38400bps -> we need at least x16 --> 614400Hz
+    // 1789820 / 614400 = 2.91 = ~3
+
+
     // Initialize clock for serial 1
     CTC_Chan0 = 0x45; // Control word, continued operation, followed by time constant, automatic trigger, falling edge, prescaler of 16, counter mode, no interrupts
     CTC_Chan0 = 0x03; // Time constant of 3

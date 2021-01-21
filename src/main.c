@@ -37,6 +37,7 @@ void sys_init(void) {
 	spkr_init();
 	
     clk_ser_init();
+    dart_init();
 	
 	disp_print(&str_appname);
 	

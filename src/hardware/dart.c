@@ -9,5 +9,8 @@ static __sfr __at (DART_BASE+0x03) DART_CtrlB;
 
 
 void dart_init(void) {
-    DART_CtrlA = 
+    DART_CtrlB = 0x18; // Channel reset
+    DART_CtrlB = 0x03; DART_CtrlB = 0xC1; // WR3, RX enable, 8bits per char (RX)
+    DART_CtrlB = 0x04; DART_CtrlB = 0x44; // 1 stop bit, X16 clock mode
+    DART_CtrlB = 0x05; DART_CtrlB = 0x68; // TX enable, 8bits per char (TX)
 }
