@@ -18,7 +18,7 @@ void pio_init(void) {
     // Taken from Tranz 330 Library routines
     PIO_CtrlA = 0xCF; // Control each port bit individually
     PIO_CtrlA = 0x80; // Bit 7 is input, the others are outputs
-    PIO_CtrlA = 0x18; // Interupt vector 0x18
+    PIO_CtrlA = 0x10; // Interrupt vector 0x10
     PIO_CtrlA = 0x97; // Generate interrupt if any masked bit is low 
     PIO_CtrlA = 0x7F; // Mask bit 7 from the interrupt
     PIO_PortA = 0x3F; // Set the initial value for port A

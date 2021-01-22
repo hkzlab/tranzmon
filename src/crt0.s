@@ -17,6 +17,7 @@
 
     ;; ISR to export
     .globl _pio_isr
+    .globl _dart_isr
 
     ;; Data to export
     .globl _str_appname
@@ -44,16 +45,21 @@ _str_appname:
 	.org 	0x0000
 	jp  init
 	
-	;; ISR
-	.org    0x0018
+	;; Interrupt vector table
+	.org    0x0010
 	.dw     #_pio_isr
+	.dw     #_dart_isr
 	
 	.org    0x0040
 init:
 	;; Stack at the top of memory.
 	ld	sp,#0xFFFF
 
-    ;; Setup the interrupts
+    ;; Setup the interrupts: http://www.z80.info/1653.htm
+    ;; In mode 2, when interrupting, a device will automatically place a vector address (8 bits) on the data bus
+    ;; this will be combined with the value in register 'i' to build a vector, where 'i' is the higher part and the data on bus the lower
+    ;;
+    ;; This vector will point to a location in memory where another 16-bit address will be found, this address is the start of the interrupt handler routine
     im 2  ;; Interrupt mode 2
     xor a ;; Interrupt vectors in page 0
     ld i,a
