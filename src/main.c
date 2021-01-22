@@ -22,10 +22,6 @@ static char cmd_buffer[CMD_BUF_SIZE];
 
 /******/
 void pio_isr (void) __interrupt(0x10);
-void ctc_isr_0(void) __interrupt(0x18);
-void ctc_isr_1(void) __interrupt(0x1A);
-void ctc_isr_2(void) __interrupt(0x1C);
-void ctc_isr_3(void) __interrupt(0x1E);
 
 void monitor_parse_command(char *cmd, uint8_t idx);
 
@@ -41,10 +37,10 @@ void sys_init(void) {
 	pio_init();
 	disp_init();
 	disp_clear();
-	spkr_init();
+	clk_ser_init();
+	dart_init();
 	
-    clk_ser_init();
-    dart_init();
+	spkr_init();
 	
 	disp_print(&str_appname);
 	
@@ -214,7 +210,4 @@ uint8_t monitor_inp(uint8_t port) __naked {
 /***/
 
 void pio_isr (void) __interrupt(0x10) {}
-void ctc_isr_0(void) __interrupt(0x18) {}
-void ctc_isr_1(void) __interrupt(0x1A) {}
-void ctc_isr_2(void) __interrupt(0x1C) {}
-void ctc_isr_3(void) __interrupt(0x1E) {}
+

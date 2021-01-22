@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <hardware/dart.h>
+
 #include "console.h"
 #include "utilities.h"
 
@@ -31,7 +33,7 @@ uint8_t xmodem_receive(uint8_t* dest) {
 
 	expected_pkt = 0x01; // Setting to the first packet
 	
-	//n8vem_serio_putch(NAK);
+	dart_write(PORT_B, NAK);
 	while(retries--) {
 		if(wait_getData(&ch, 10)) {
 			switch(ch) {
@@ -41,26 +43,26 @@ uint8_t xmodem_receive(uint8_t* dest) {
 							dest+=128; // Next block
 							expected_pkt++;
 						case 2: // Re-Got the previous block
-							//n8vem_serio_putch(ACK);
+							dart_write(PORT_B, ACK);
 							retries = MAXERR;
 							break;
 						default:
 							flush();
-							//n8vem_serio_putch(NAK);
+							dart_write(PORT_B, NAK);
 							break;
 					}
 					break;
 				case EOT:
-					//n8vem_serio_putch(ACK);
-					//console_printString("\r\nEOT\r\n");
+					dart_write(PORT_B, ACK);
+					console_printString("\r\nEOT\r\n");
 					return 0;
 				default: // Reading garbage?
 					flush();
-					//n8vem_serio_putch(NAK);
+					dart_write(PORT_B, NAK);
 					break;
 			}
 		} else {
-			//n8vem_serio_putch(NAK);
+		    dart_write(PORT_B, NAK);
 		}
 	}
 

@@ -1,5 +1,7 @@
 #include "utilities.h"
 
+extern volatile uint16_t msec_counter;
+
 uint8_t monitor_parseU8(char *str) {
 	uint8_t val = 0, idx;
 	char ch;
@@ -34,6 +36,14 @@ void monitor_printU8(uint8_t data, char *str) {
 			str[idx] = val + 0x37;
 	}
 }
+/*
+void delay_ms(uint16_t delay) {
+    msec_counter = 0;
+    
+    while(msec_counter < delay) __asm nop __endasm;
+}
+*/
+
 
 // Lifted from the Tranz 330 library utilities
 void delay_ms(uint16_t delay) __naked {
@@ -73,4 +83,6 @@ void delay_ms(uint16_t delay) __naked {
         ret      
     __endasm;
 }
+
+
 
