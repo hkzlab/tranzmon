@@ -51,6 +51,7 @@ _str_appname:
 	
 	;; Interrupt vector table
 	.org    0x0010
+inttbl:
 	.dw     #_pio_isr   ;; 0x10
 	.dw     #_dart_isr  ;; 0x12
 	.dw     0           ;; 0x14
@@ -72,7 +73,7 @@ init:
     ;;
     ;; This vector will point to a location in memory where another 16-bit address will be found, this address is the start of the interrupt handler routine
     im 2  ;; Interrupt mode 2
-    xor a ;; Interrupt vectors in page 0
+    xor a ;; Interrupt vectors page 0
     ld i,a
     
     di ;; Disable the interrupts for now

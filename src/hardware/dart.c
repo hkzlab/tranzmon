@@ -46,5 +46,7 @@ void dart_write(DART_Port port, uint8_t data) {
 
 /***/
 
-void dart_isr(void) __interrupt(0x12) {}
+void dart_isr(void) __interrupt(0x12) {
+    // Depending on what caused the interrupt, we should clear the condition (e.g. empty the rx buffer)
+}
 
