@@ -18,7 +18,11 @@
     ;; ISR to export
     .globl _pio_isr
     .globl _dart_isr
-
+    .globl _ctc_isr_0
+    .globl _ctc_isr_1
+    .globl _ctc_isr_2
+    .globl _ctc_isr_3
+            
     ;; Data to export
     .globl _str_appname
 
@@ -47,8 +51,15 @@ _str_appname:
 	
 	;; Interrupt vector table
 	.org    0x0010
-	.dw     #_pio_isr
-	.dw     #_dart_isr
+	.dw     #_pio_isr   ;; 0x10
+	.dw     #_dart_isr  ;; 0x12
+	.dw     0           ;; 0x14
+	.dw     0           ;; 0x16
+	.dw     #_ctc_isr_0 ;; 0x18
+	.dw     #_ctc_isr_1 ;; 0x1A
+	.dw     #_ctc_isr_2 ;; 0x1C
+	.dw     #_ctc_isr_3 ;; 0x1E
+	
 	
 	.org    0x0040
 init:
