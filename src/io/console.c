@@ -1,5 +1,7 @@
 #include "console.h"
 
+#include <hardware/dart.h>
+
 // We need to implement this for stdio...
 void putchar(char ch);
 char getchar(void);
@@ -9,14 +11,10 @@ void console_printString(char *str) {
 }
 
 void putchar(char ch) {
-#ifdef __SERIAL_CONSOLE__
-
-#endif
+    return dart_write(PORT_B, ch);
 }
 
 char getchar(void) {
-#ifdef __SERIAL_CONSOLE__
-
-#endif
+    return dart_read(PORT_B);
 }
 

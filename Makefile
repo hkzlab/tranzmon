@@ -33,7 +33,6 @@ DLOC = 0x8000
 
 # Compilation / Assembly / Linking flags
 CUST_DEFINES = 
-#CUST_DEFINES += -D__SERIAL_CONSOLE__
 CCC_FLAGS = --opt-code-size -mz80 -D__SDCC__=1 -D__ROMADDR__=$(ROMADDR) -D__CLOC__=$(CLOC) -D__DLOC__=$(DLOC) $(CUST_DEFINES) $(INCLUDES)
 CAS_FLAGS = -plosff
 CLD_FLAGS = --code-loc $(CLOC) --data-loc $(DLOC) --code-size $(CSIZ) --no-std-crt0 --out-fmt-ihx
@@ -55,12 +54,14 @@ $(BIN_DIR)/$(TARGET).ihx:	$(BIN_DIR)/crt0.rel $(BIN_DIR)/main.rel \
 							$(BIN_DIR)/pio.rel \
 							$(BIN_DIR)/ctc.rel \
 							$(BIN_DIR)/dart.rel \
-							$(BIN_DIR)/utilities.rel
+							$(BIN_DIR)/utilities.rel \
+							$(BIN_DIR)/console.rel
 	$(CCC) $(CLD_FLAGS) $(CCC_FLAGS) $(BIN_DIR)/crt0.rel $(BIN_DIR)/main.rel \
 		$(BIN_DIR)/pio.rel \
 		$(BIN_DIR)/ctc.rel \
 		$(BIN_DIR)/dart.rel \
 		$(BIN_DIR)/utilities.rel \
+	    $(BIN_DIR)/console.rel \
 		-o $(BIN_DIR)/$(TARGET).ihx
 
 $(BIN_DIR)/crt0.rel: $(SRC_DIR)/crt0.s
@@ -80,6 +81,9 @@ $(BIN_DIR)/ctc.rel: $(SRC_DIR)/hardware/ctc.c
 
 $(BIN_DIR)/dart.rel: $(SRC_DIR)/hardware/dart.c
 	$(CCC) $(CCC_FLAGS) -c -o $(BIN_DIR) $(SRC_DIR)/hardware/dart.c
+	
+$(BIN_DIR)/console.rel: $(SRC_DIR)/io/console.c
+	$(CCC) $(CCC_FLAGS) -c -o $(BIN_DIR) $(SRC_DIR)/io/console.c
 
 clean:
 	rm $(BIN_DIR)/*

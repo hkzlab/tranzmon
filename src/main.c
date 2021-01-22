@@ -7,6 +7,8 @@
 #include <hardware/ctc.h>
 #include <hardware/dart.h>
 
+#include <io/console.h>
+
 #include "utilities.h"
 
 #define CMD_BUF_SIZE 15
@@ -20,7 +22,6 @@ static char cmd_buffer[CMD_BUF_SIZE];
 
 /******/
 void pio_isr (void) __interrupt(0x10);
-void dart_isr(void) __interrupt(0x12);
 void ctc_isr_0(void) __interrupt(0x18);
 void ctc_isr_1(void) __interrupt(0x1A);
 void ctc_isr_2(void) __interrupt(0x1C);
@@ -62,9 +63,10 @@ void main(void) {
 	// Do basic system initialization
 	sys_init();
 	
-	while(1);
-/*
-	console_printString(MONITOR_HEAD);
+	putchar('\n'); putchar('\r');
+	console_printString(&str_appname);
+	putchar('\n'); putchar('\r');
+	
 
 	while(1) { // Endless loop
 		console_printString(MONITOR_CMD_PROMPT);
@@ -99,11 +101,10 @@ void main(void) {
 
 		}
 	}
-	*/
 }
 
 /***/
-/*
+
 void monitor_parse_command(char *cmd, uint8_t idx) {
 	uint8_t val;
 
@@ -157,9 +158,9 @@ void monitor_parse_command(char *cmd, uint8_t idx) {
 
 	return;
 }
-*/
+
 /*** Monitor Commands ***/
-/*
+
 void monitor_jmp(uint8_t *addr) __naked {
 	addr;
 
@@ -209,9 +210,10 @@ uint8_t monitor_inp(uint8_t port) __naked {
 		ret
 	__endasm;
 }
-*/
+
+/***/
+
 void pio_isr (void) __interrupt(0x10) {}
-void dart_isr(void) __interrupt(0x12) {}
 void ctc_isr_0(void) __interrupt(0x18) {}
 void ctc_isr_1(void) __interrupt(0x1A) {}
 void ctc_isr_2(void) __interrupt(0x1C) {}
