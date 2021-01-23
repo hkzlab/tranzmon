@@ -18,15 +18,15 @@ void dart_init(void) {
     DART_CtrlB = 0x03; DART_CtrlB = 0xC1; // WR3, RX enable, 8bits per char (RX)
     DART_CtrlB = 0x04; DART_CtrlB = 0x44; // 1 stop bit, prescaler set to 16
     DART_CtrlB = 0x05; DART_CtrlB = 0x68; // TX enable, 8bits per char (TX)
+    
+    // Initialize channel A
+    //DART_CtrlA = 0x03; DART_CtrlA = 0xC1; // WR3, RX enable, 8bits per char (RX)
+    //DART_CtrlA = 0x04; DART_CtrlA = 0x44; // 1 stop bit, prescaler set to 16
+    //DART_CtrlA = 0x05; DART_CtrlA = 0x68; // TX enable, 8bits per char (TX)   
 }
 
 uint8_t dart_dataAvailable(DART_Port port) {
-    switch(port) {
-        case PORT_A:
-            return DART_CtrlA & 0x01;
-        default:
-            return DART_CtrlB & 0x01;
-    }
+    return ((port == PORT_A) ? DART_CtrlA : DART_CtrlB) & 0x01;
 }
 
 uint8_t dart_txBufferEmpty(DART_Port port) {

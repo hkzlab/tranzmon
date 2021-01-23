@@ -13,7 +13,7 @@ void ctc_isr_1(void) __interrupt(0x1A);
 void ctc_isr_2(void) __interrupt(0x1C);
 void ctc_isr_3(void) __interrupt(0x1E);
 
-volatile uint32_t tick_counter = 0;
+static volatile uint32_t tick_counter = 0;
 
 void spkr_init(void) {
     // Taken from Tranz 330 Library routines
@@ -52,6 +52,16 @@ void clk_ser_init(void) {
     // The same for the second serial port
     CTC_Chan1 = 0x45;
     CTC_Chan1 = 0x17; // time constant
+}
+
+uint32_t get_tick(void) {
+    uint32_t tick;
+       
+    __asm di __endasm;
+        tick = tick_counter;
+    __asm ei __endasm;
+    
+    return tick;
 }
 
 void ctc_isr_0(void) __interrupt(0x18) { }

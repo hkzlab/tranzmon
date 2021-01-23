@@ -1,6 +1,6 @@
 #include "utilities.h"
 
-extern volatile uint32_t tick_counter;
+#include <hardware/ctc.h>
 
 uint8_t monitor_parseU8(char *str) {
 	uint8_t val = 0, idx;
@@ -78,9 +78,9 @@ void delay_ms(uint16_t delay) __naked {
 }
 
 void delay_ms_ctc(uint16_t delay) {
-    uint32_t now = tick_counter;
+    uint32_t now = get_tick();
     
-    while((tick_counter-now) < delay) __asm nop __endasm;
+    while((get_tick()-now) < delay) __asm nop __endasm;
 }
 
 

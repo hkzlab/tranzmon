@@ -11,4 +11,6 @@ void delay_ms_ctc(uint16_t delay);
 
 void tick_init(void);
 
+uint32_t get_tick(void);
+
 #endif /* _CTC_HEADER_ */

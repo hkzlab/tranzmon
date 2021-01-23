@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include <hardware/dart.h>
+#include <hardware/ctc.h>
 
 #include "console.h"
 #include "utilities.h"
@@ -19,10 +20,8 @@
 #define XMODEM_PKT_SIZE (XMODEM_DATA_SIZE+5)
 
 #define XMODEM_DEFAULT_TRIES 20
-#define XMODEM_XFER_TIMEOUT 1000 // 1 sec without transferred bytes
-#define XMODEM_BYTE_TIMEOUT 100 // 100 ms without transferred bytes
-
-extern volatile uint32_t tick_counter;
+#define XMODEM_XFER_TIMEOUT 5000 // 5 secs without transferred bytes
+#define XMODEM_BYTE_TIMEOUT 1000 // 1 sec without transferred bytes
 
 static uint8_t packet_buf[XMODEM_PKT_SIZE];
 
@@ -36,7 +35,7 @@ uint8_t xmodem_receive(uint8_t* dest) {
     uint8_t *pkt_dest = dest;
 
     uint8_t nack_retries = 0xFF;
-    uint16_t last_packet = tick_counter;
+    uint32_t last_packet = get_tick();
     uint32_t now = 0;
     uint8_t last_pkt_num = 0xFF; // As we start from 0, this should be different from the first we get
 
@@ -44,16 +43,18 @@ uint8_t xmodem_receive(uint8_t* dest) {
 
     while(nack_retries) {
         if(xmodem_recv_pkt()) {
-            last_packet = tick_counter;
+            last_packet = get_tick();
 
             switch(packet_buf[0]) {
                 case SOH:
-                    if(!xmodem_check_packet()) { dart_write(PORT_B, NACK); nack_retries--; }
-                    else {
+                    if(!xmodem_check_packet()) { 
+                        nack_retries--;
+                        dart_write(PORT_B, NACK);
+                    } else {
                         nack_retries = 0xFF;
                         if(last_pkt_num != packet_buf[1]) { // Upload this only if it is not a retransmission
-                            xmodem_upload_packet(pkt_dest);
-                            pkt_dest += XMODEM_DATA_SIZE;
+                            //xmodem_upload_packet(pkt_dest);
+                            //pkt_dest += XMODEM_DATA_SIZE;
                             last_pkt_num = packet_buf[1] & 0xFF;
                         }
                         dart_write(PORT_B, ACK);
@@ -69,7 +70,7 @@ uint8_t xmodem_receive(uint8_t* dest) {
             }
         } else dart_write(PORT_B, NACK);
 
-        now = tick_counter;
+        now = get_tick();
         if((now > last_packet) && ((now - last_packet) > XMODEM_XFER_TIMEOUT)) { nack_retries--; dart_write(PORT_B, NACK); };
     }
 
@@ -80,10 +81,10 @@ static uint8_t xmodem_sync(uint8_t tries) {
     uint32_t now;
 
     while(tries--) {
-        now = tick_counter;
+        now = get_tick();
     
         dart_write(PORT_B, SYNC);
-        while((tick_counter - now) < 3000) { // Wait 3 seconds before putting out another SYNC
+        while((get_tick() - now) < 3000) { // Wait 3 seconds before putting out another SYNC
             if(dart_dataAvailable(PORT_B)) return 1; // Got something!!!
         }
     }
@@ -104,12 +105,12 @@ static uint8_t xmodem_recv_pkt(void) {
     uint8_t didx = 0;
     uint8_t data = 0;
     
-    uint32_t last_data = tick_counter;
+    uint32_t last_data = get_tick();
     uint32_t now = 0;
 
     while(didx < XMODEM_PKT_SIZE) {
         if(dart_dataAvailable(PORT_B)) {
-            last_data = tick_counter;
+            last_data = get_tick();
 
             data = dart_read(PORT_B);
             packet_buf[didx] = data;
@@ -117,7 +118,7 @@ static uint8_t xmodem_recv_pkt(void) {
             didx++;
         }
 
-        now = tick_counter;
+        now = get_tick();
         if((now > last_data) && ((now - last_data) > XMODEM_BYTE_TIMEOUT)) return 0; // Transfer timed out
     }
 
