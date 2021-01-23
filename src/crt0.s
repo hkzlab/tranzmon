@@ -26,6 +26,10 @@
     ;; Data to export
     .globl _str_appname
 
+	.globl  l__INITIALIZER
+	.globl  s__INITIALIZED
+ 	.globl  s__INITIALIZER
+
 	.area	_HEADER (ABS)
 
     ;; Strings and other static data
@@ -91,7 +95,15 @@ init:
 	call	_main
 	jp		_exit
 
-gsinit::
+gsinit:
+	ld	bc, #l__INITIALIZER
+	ld	a, b
+	or	a, c
+	jr	Z, gsinit_next
+	ld	de, #s__INITIALIZED
+	ld	hl, #s__INITIALIZER
+	ldir
+gsinit_next:
     ret
     
 _exit::
@@ -100,11 +112,9 @@ _exit::
 	;; Ordering of segments for the linker.
 	.area	_HOME
     .area   _CODE
+    .area   _INITIALIZER
 	.area	_DATA
     .area   _INITIALIZED
-    .area   _GSFINAL
-    .area   _GSINIT
-    .area   _INITIALIZER
 	.area   _BSEG
 	.area   _BSS
 	.area   _HEAP

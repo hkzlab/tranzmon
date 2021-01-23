@@ -57,11 +57,6 @@ void main(void) {
 	// Do basic system initialization
 	sys_init();
 	
-	while(1) {
-	    delay_ms_ctc(1000);
-	    putchar('!'); putchar('\n'); putchar('\r');
-	}
-	
 	putchar('\n'); putchar('\r');
 	console_printString(&str_appname);
 	putchar('\n'); putchar('\r');
