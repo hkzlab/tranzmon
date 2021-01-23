@@ -9,4 +9,6 @@ void spkr_beep(uint8_t time_const);
 void clk_ser_init(void);
 void delay_ms_ctc(uint16_t delay);
 
+void tick_init(void);
+
 #endif /* _CTC_HEADER_ */

@@ -8,6 +8,7 @@
 #include <hardware/dart.h>
 
 #include <io/console.h>
+#include <io/xmodem.h>
 
 #include "utilities.h"
 
@@ -38,6 +39,7 @@ void sys_init(void) {
 	disp_init();
 	disp_clear();
 	clk_ser_init();
+	tick_init();
 	dart_init();
 	
 	spkr_init();
@@ -60,7 +62,6 @@ void main(void) {
 	putchar('\n'); putchar('\r');
 	console_printString(&str_appname);
 	putchar('\n'); putchar('\r');
-	
 
 	while(1) { // Endless loop
 		console_printString(MONITOR_CMD_PROMPT);
@@ -108,11 +109,9 @@ void monitor_parse_command(char *cmd, uint8_t idx) {
 	mon_buff[1] = '\n';
 
 	switch(cmd[0]) {
-#ifdef __USE_N8VEM_SERIO__
 		case 'X': // XModem transfer
 			xmodem_receive((uint8_t*)monitor_parseU16(&cmd[1]));
 			break;
-#endif
 		case 'I': // IN
 			val = monitor_inp(monitor_parseU8(&cmd[1]));
 			

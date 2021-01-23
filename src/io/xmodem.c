@@ -8,120 +8,141 @@
 #include "console.h"
 #include "utilities.h"
 
-#define SOH  0x01
-#define EOT  0x04
-#define ACK  0x06
-#define NAK  0x15
-#define CAN  0x18
+#define SOH     0x01
+#define EOT     0x04
+#define ACK     0x06
+#define NACK    0x15
+#define SYNC    0x43
 
-#define CTRLZ 0x1A
-#define MAXERR 25
+#define XMODEM_DATA_OFFSET 3
+#define XMODEM_DATA_SIZE 128
+#define XMODEM_PKT_SIZE (XMODEM_DATA_SIZE+5)
 
+#define XMODEM_DEFAULT_TRIES 20
+#define XMODEM_XFER_TIMEOUT 1000 // 1 sec without transferred bytes
+#define XMODEM_BYTE_TIMEOUT 100 // 100 ms without transferred bytes
 
-static void flush(void);
-static uint8_t checksum(uint8_t *buf);
-static uint8_t wait_getData(uint8_t *data, uint8_t secs);
-static uint8_t xmodem_mngPkt(uint8_t *dest);
+extern volatile uint32_t tick_counter;
 
-static uint8_t expected_pkt;
-static uint8_t pkt_buf[131];
+static uint8_t packet_buf[XMODEM_PKT_SIZE];
 
+static uint8_t xmodem_sync(uint8_t tries);
+static uint8_t xmodem_recv_pkt(void);
+static uint8_t xmodem_check_packet(void);
+static void xmodem_upload_packet(uint8_t *ptr);
+static uint16_t crc_calc(uint8_t *ptr, int16_t count);
 
 uint8_t xmodem_receive(uint8_t* dest) {
-	uint8_t retries = MAXERR;
-	uint8_t ch = 0;
+    uint8_t *pkt_dest = dest;
 
-	expected_pkt = 0x01; // Setting to the first packet
-	
-	dart_write(PORT_B, NAK);
-	while(retries--) {
-		if(wait_getData(&ch, 10)) {
-			switch(ch) {
-				case SOH:
-					switch(xmodem_mngPkt(dest)) { // Got SOH, time to parse the packet
-						case 1: // Got new block
-							dest+=128; // Next block
-							expected_pkt++;
-						case 2: // Re-Got the previous block
-							dart_write(PORT_B, ACK);
-							retries = MAXERR;
-							break;
-						default:
-							flush();
-							dart_write(PORT_B, NAK);
-							break;
-					}
-					break;
-				case EOT:
-					dart_write(PORT_B, ACK);
-					console_printString("\r\nEOT\r\n");
-					return 0;
-				default: // Reading garbage?
-					flush();
-					dart_write(PORT_B, NAK);
-					break;
-			}
-		} else {
-		    dart_write(PORT_B, NAK);
-		}
-	}
+    uint8_t nack_retries = 0xFF;
+    uint16_t last_packet = tick_counter;
+    uint32_t now = 0;
+    uint8_t last_pkt_num = 0xFF; // As we start from 0, this should be different from the first we get
 
-	return 0xFF;
+    if(!xmodem_sync(XMODEM_DEFAULT_TRIES)) return 0; // No SYNC, time to exit
+
+    while(nack_retries) {
+        if(xmodem_recv_pkt()) {
+            last_packet = tick_counter;
+
+            switch(packet_buf[0]) {
+                case SOH:
+                    if(!xmodem_check_packet()) { dart_write(PORT_B, NACK); nack_retries--; }
+                    else {
+                        nack_retries = 0xFF;
+                        if(last_pkt_num != packet_buf[1]) { // Upload this only if it is not a retransmission
+                            xmodem_upload_packet(pkt_dest);
+                            pkt_dest += XMODEM_DATA_SIZE;
+                            last_pkt_num = packet_buf[1] & 0xFF;
+                        }
+                        dart_write(PORT_B, ACK);
+                    }
+                    break;
+                case EOT: // Transfer completed
+                    dart_write(PORT_B, ACK);
+                    return 1;
+                default: // Unknown packet...
+                    dart_write(PORT_B, NACK);
+                    nack_retries--;
+                    break;
+            }
+        } else dart_write(PORT_B, NACK);
+
+        now = tick_counter;
+        if((now > last_packet) && ((now - last_packet) > XMODEM_XFER_TIMEOUT)) { nack_retries--; dart_write(PORT_B, NACK); };
+    }
+
+    return 0;
 }
 
-static void flush(void) {
-	uint8_t val = 1;
-	uint8_t del_loop;
+static uint8_t xmodem_sync(uint8_t tries) {
+    uint32_t now;
 
-	while(val) {
-		del_loop = 0xFF;
-		while(del_loop--) {
-			__asm
-				nop
-			__endasm;
-		}
-		//n8vem_serio_getch_nb(&val, 1);
-	}
+    while(tries--) {
+        now = tick_counter;
+    
+        dart_write(PORT_B, SYNC);
+        while((tick_counter - now) < 3000) { // Wait 3 seconds before putting out another SYNC
+            if(dart_dataAvailable(PORT_B)) return 1; // Got something!!!
+        }
+    }
+
+    return 0;
 }
 
-static uint8_t checksum(uint8_t *buf) {
-	uint8_t val = 0, idx;
+static uint8_t xmodem_check_packet(void) {
+    uint16_t crc = crc_calc(&packet_buf[XMODEM_DATA_OFFSET], XMODEM_DATA_SIZE);
+    uint16_t calc_crc = ((uint16_t)packet_buf[131]) << 8 | packet_buf[132];
 
-	for (idx = 0; idx < 128; idx++)
-		val += buf[idx];
+    if(crc != calc_crc) return 0; // Corrupted
 
-	return val;
+    return 1;
 }
 
-static uint8_t wait_getData(uint8_t *data, uint8_t secs) {
-	uint8_t stat;
-	//*data = n8vem_serio_getch_nb(&stat, secs);
+static uint8_t xmodem_recv_pkt(void) {
+    uint8_t didx = 0;
+    uint8_t data = 0;
+    
+    uint32_t last_data = tick_counter;
+    uint32_t now = 0;
 
-	return stat;
+    while(didx < XMODEM_PKT_SIZE) {
+        if(dart_dataAvailable(PORT_B)) {
+            last_data = tick_counter;
+
+            data = dart_read(PORT_B);
+            packet_buf[didx] = data;
+            if(!didx && (data == EOT)) break;
+            didx++;
+        }
+
+        now = tick_counter;
+        if((now > last_data) && ((now - last_data) > XMODEM_BYTE_TIMEOUT)) return 0; // Transfer timed out
+    }
+
+    return 1;
 }
 
-static uint8_t xmodem_mngPkt(uint8_t *dest) {
-	uint8_t idx;
-
-	for (idx = 0; idx < 131; idx++) {
-		if (!wait_getData(&pkt_buf[idx], 10)) {
-				return 0;
-		}
-	}
-
-	if(pkt_buf[1] != (0xFF - pkt_buf[0])) { // Verify we got the packet number correctly
-		return 0;
-	}
-	
-	if (pkt_buf[0] == (expected_pkt - 1)) { // Already got this...
-		return 2;
-	} else if (pkt_buf[0] == expected_pkt) {
-		if(checksum(&pkt_buf[2]) == pkt_buf[130]) { // OK!
-			memcpy(dest, pkt_buf+2, 128);
-
-			return 1;
-		}
-	}
-	
-	return 0;
+static void xmodem_upload_packet(uint8_t *ptr) {
+    for(uint8_t idx = 0; idx < XMODEM_DATA_SIZE; idx++) ptr[idx] = packet_buf[idx];
 }
+
+
+static uint16_t crc_calc(uint8_t *ptr, int16_t count) {
+    uint16_t crc;
+    uint8_t i;
+
+    crc = 0;
+    while (--count >= 0) {
+        crc = crc ^ (uint16_t) *ptr++ << 8;
+        i = 8;
+        do {
+            if (crc & 0x8000) crc = crc << 1 ^ 0x1021;
+            else crc = crc << 1;
+        } while(--i);
+    }
+
+    return crc;
+}
+
