@@ -13,8 +13,8 @@ void ctc_isr_1(void) __interrupt(0x1A);
 void ctc_isr_2(void) __interrupt(0x1C);
 void ctc_isr_3(void) __interrupt(0x1E);
 
-static volatile uint8_t isr_time_counter;
-volatile uint16_t ctc_msec_counter = 0;
+static uint8_t isr_counter;
+volatile uint16_t tick_counter = 0;
 
 void spkr_init(void) {
     // Taken from Tranz 330 Library routines
@@ -31,35 +31,29 @@ void spkr_beep(uint8_t time_const) {
 }
 
 void clk_ser_init(void) {
-    //CLOCK = 3.57964Mhz
-    // CLOCK/2 = 1,78982Mhz 
-    // 38400bps -> we need at least x16 --> 614400Hz
-    // 9600 -> 153600Hz
-    // 1789820 / 614400 = 2.91 = ~3 
-    // 1789820 / 153600 = 11.65 = ~12
+    // CLOCK/2 = 1,78982Mhz   ---> We get this in input to the CTC
+    // DART for port B is running in x1 prescaler mode
+    // For 9600bps we have a counter of 1.789.820 / 9600 ~= 186
 
-
-    isr_time_counter = 0;
+    tick_counter = 0;
+    isr_counter = 0;
 
     // Program the interrupt vector
     CTC_Chan0 = 0x18;
 
     // Initialize clock for serial 1
     CTC_Chan0 = 0xC5; // Control word, interrupt, continued operation, followed by time constant, automatic trigger, falling edge, prescaler of 16, counter mode, no interrupts
-    CTC_Chan0 = 0x18; // Time constant of 24, 4800 bps
+    CTC_Chan0 = 0xBA; // time constant
     
     // The same for the second serial port
     CTC_Chan1 = 0x45;
-    CTC_Chan1 = 0x0C; // Time constant of 12, 9600 bps
+    CTC_Chan1 = 0xBA; // time constant
 }
 
 void ctc_isr_0(void) __interrupt(0x18) {
-    isr_time_counter++;
+    isr_counter++;
     
-    if(isr_time_counter == 15) {
-        isr_time_counter = 0;
-        ctc_msec_counter++;
-    }
+    if(!(isr_counter%3)) tick_counter++;
 }
 
 void ctc_isr_1(void) __interrupt(0x1A) { }
