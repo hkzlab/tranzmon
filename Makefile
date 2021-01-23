@@ -44,7 +44,8 @@ all: $(BIN_DIR)/$(TARGET).bin
 
 $(BIN_DIR)/$(TARGET).bin:	$(BIN_DIR)/$(TARGET).hex
 	$(QUIET)$(ECHO) Converting $(TARGET).hex to bin
-	$(H2B) $(H2B_FLAGS) $(BIN_DIR)/$(TARGET).hex $(BIN_DIR)/$(TARGET).bin
+	$(H2B) $(H2B_FLAGS) $(BIN_DIR)/$(TARGET).hex $(BIN_DIR)/$(TARGET)-blob.bin
+	dd if=$(BIN_DIR)/$(TARGET)-blob.bin of=$(BIN_DIR)/$(TARGET).bin bs=1 count=32768
 
 $(BIN_DIR)/$(TARGET).hex:	$(BIN_DIR)/$(TARGET).ihx
 	$(QUIET)$(ECHO) Generating $(TARGET).ihx

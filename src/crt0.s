@@ -100,13 +100,14 @@ _exit::
 	;; Ordering of segments for the linker.
 	.area	_HOME
     .area   _CODE
+	.area	_DATA
     .area   _INITIALIZED
     .area   _GSFINAL
     .area   _GSINIT
     .area   _INITIALIZER
-	.area	_DATA
 	.area   _BSEG
 	.area   _BSS
 	.area   _HEAP
+
 
 

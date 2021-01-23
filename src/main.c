@@ -47,9 +47,7 @@ void sys_init(void) {
 	spkr_beep(0x2F); // Beep the speaker!
 	
 	// Enable the interrupts
-	__asm
-	    ei
-	__endasm;
+	__asm ei __endasm;
 }
 
 void main(void) {
