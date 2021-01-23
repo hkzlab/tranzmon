@@ -6,14 +6,8 @@
 	.globl	_main
 
 	;; Console I/O functions to export
-	;;.globl  _putchar
-	;;.globl  _getchar
-
-	;; IDE functions to export
-	;;.globl	_n8vem_ide_init
-	;;.globl	_n8vem_ide_read
-	;;.globl 	_n8vem_ide_reg_rd
-	;;.globl	_n8vem_ide_reg_wr
+	.globl  _putchar
+	.globl  _getchar
 
     ;; ISR to export
     .globl _pio_isr
@@ -35,16 +29,12 @@
     ;; Strings and other static data
     .org    0x7D00
 _str_appname:
-    .asciz  "TranzMon v0.1"
+    .asciz  "TranzMON v0.1"
 
 	;; Setup the function pointers at the end of the EPROM
 	.org	0x7F00
-	;;.dw		#_n8vem_ide_init
-	;;.dw		#_n8vem_ide_reg_rd
-	;;.dw		#_n8vem_ide_reg_wr
-	;;.dw		#_n8vem_ide_read
-	;;.dw		#_getchar
-	;;.dw		#_putchar
+	.dw		#_getchar
+	.dw		#_putchar
 	
 	.org	0x7FFE ; Add a dummy word here just to make sure the eprom is filled up to 32k
 	.dw	0xAAAA

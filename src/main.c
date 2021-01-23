@@ -14,10 +14,16 @@
 
 #define CMD_BUF_SIZE 15
 
+#define ANSI_CLRSCR "\x1b[2J\x1b[0m"
+
 #define MONITOR_CMD_PROMPT "\r\n] "
-#define MONITOR_ERR_MSG "\r\nE\r\n"
+#define MONITOR_ERR_MSG "\r\nERROR!\r\n"
 
 #define STR_BUFF_LEN 13
+
+extern char str_appname;
+extern char str_clrscr;
+
 static char mon_buff[STR_BUFF_LEN];
 static char cmd_buffer[CMD_BUF_SIZE];
 
@@ -30,8 +36,6 @@ void monitor_parse_command(char *cmd, uint8_t idx);
 void monitor_outp(uint8_t port, uint8_t data);
 uint8_t monitor_inp(uint8_t port);
 void monitor_jmp(uint8_t *addr);
-
-extern char str_appname;
 
 /** Here lies the code **/
 void sys_init(void) {
@@ -59,9 +63,14 @@ void main(void) {
 	// Do basic system initialization
 	sys_init();
 	
+	console_printString(ANSI_CLRSCR);
+	
 	putchar('\n'); putchar('\r');
 	console_printString(&str_appname);
 	putchar('\n'); putchar('\r');
+	
+	delay_ms_ctc(2000);
+	disp_clear();
 
 	while(1) { // Endless loop
 		console_printString(MONITOR_CMD_PROMPT);
@@ -70,24 +79,28 @@ void main(void) {
 		buf_idx = 0;
 		while(cmd_read_loop) {
 			ch = getchar(); // Read a char
-			putchar(ch); // Print it
 			
 			// Turn the letter uppercase for parsing purposes
-			if (ch >= 0x61) {
-				ch &= 0xDF;
-			}
+			if (ch >= 0x61 && ch <= 0x7A) ch &= 0xDF;
+			
+			if(ch != 0x08) putchar(ch);
 
 			switch(ch) {
 				case 0x0D: // CR
 					monitor_parse_command(cmd_buffer, buf_idx);	
 					cmd_read_loop = 0;
 					break;
+				case 0x08: // Backspace
+				    cmd_buffer[buf_idx] = 0;
+				    if(buf_idx > 0) {
+				        putchar(0x08); putchar(' '); putchar(0x08);
+				        buf_idx--;
+				    }
+				    break;
 				default:
 					if(buf_idx >= CMD_BUF_SIZE) {
 						cmd_read_loop = 0;
-
-						//console_printString(MONITOR_ERR_MSG);
-
+						console_printString(MONITOR_ERR_MSG);
 					} else {
 						cmd_buffer[buf_idx++] = ch;
 					}
