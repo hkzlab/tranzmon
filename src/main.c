@@ -6,6 +6,7 @@
 #include <hardware/pio.h>
 #include <hardware/ctc.h>
 #include <hardware/dart.h>
+#include <hardware/clock.h>
 
 #include <io/console.h>
 #include <io/xmodem.h>
@@ -25,6 +26,7 @@ extern char str_appname;
 extern char str_clrscr;
 
 static char cmd_buffer[CMD_BUF_SIZE];
+static clock_stat clk;
 
 /******/
 void pio_isr (void) __interrupt(0x10);
@@ -33,6 +35,7 @@ static void monitor_parse_command(char *cmd, uint8_t idx);
 
 /**/
 static void sys_init(void);
+static void print_clock(clock_stat *clk);
 static void monitor_outp(uint8_t port, uint8_t data);
 static uint8_t monitor_inp(uint8_t port);
 static void monitor_jmp(uint8_t *addr);
@@ -64,11 +67,11 @@ void main(void) {
 	// Do basic system initialization
 	sys_init();
 	
-	console_printString(ANSI_CLRSCR);
+	printf("%s\n\r%s", ANSI_CLRSCR, &str_appname);
 	
-	putchar('\n'); putchar('\r');
-	console_printString(&str_appname);
-	putchar('\n'); putchar('\r');
+	// Print the time
+	clock_get(&clk);
+	print_clock(&clk);
 	
 	delay_ms_ctc(2000);
 	disp_clear();
@@ -235,6 +238,10 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 }
 
 /*** Monitor Commands ***/
+
+static void print_clock(clock_stat *clk) {
+    printf("\n\rCurrent time -> %02X/%02X/%02X %02X:%02X:%02X %s\n\r", clk->d, clk->M, clk->y, clk->h, clk->m, clk->s, clock_dowName(clk->dow));
+}
 
 static void monitor_read(uint16_t address, uint8_t blocks) {
     uint8_t *ptr = (uint8_t*)address;
