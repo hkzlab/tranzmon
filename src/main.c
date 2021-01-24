@@ -83,7 +83,7 @@ void main(void) {
 			// Turn the letter uppercase for parsing purposes
 			if (ch >= 0x61 && ch <= 0x7A) ch &= 0xDF;
 			
-			if(ch != 0x08) putchar(ch);
+			if(ch != 0x08) putchar(ch); // The backspace will be handled below
 
 			switch(ch) {
 				case 0x0D: // CR
@@ -93,12 +93,12 @@ void main(void) {
 				case 0x08: // Backspace
 				    cmd_buffer[buf_idx] = 0;
 				    if(buf_idx > 0) {
-				        putchar(0x08); putchar(' '); putchar(0x08);
+				        putchar(0x08); putchar(' '); putchar(0x08); // Clear the previous char
 				        buf_idx--;
 				    }
 				    break;
 				default:
-					if(buf_idx >= CMD_BUF_SIZE) {
+					if(buf_idx >= CMD_BUF_SIZE) { // Command exceeded the maximum length, clearing!
 						cmd_read_loop = 0;
 						console_printString(MONITOR_ERR_MSG);
 					} else {
@@ -116,7 +116,7 @@ void main(void) {
 void monitor_parse_command(char *cmd, uint8_t idx) {
 	uint8_t val;
 
-	if (!idx) return;
+	if (!idx) return; // Nothing to execute
 
 	mon_buff[0] = '\r';
 	mon_buff[1] = '\n';
