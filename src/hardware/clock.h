@@ -15,6 +15,7 @@ typedef struct {
     uint8_t dow; // Weeks starts at 0 -> Sunday
 } clock_stat;
 
+void clock_init(void);
 void clock_set(clock_stat *cs);
 void clock_get(clock_stat *cs);
 char *clock_dowName(uint8_t dow);

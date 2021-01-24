@@ -46,6 +46,7 @@ static void sys_init(void) {
 	pio_init();
 	disp_init();
 	disp_clear();
+	clock_init();
 	clk_ser_init();
 	tick_init();
 	dart_init();
@@ -87,6 +88,7 @@ void main(void) {
 			// Turn the letter uppercase for parsing purposes
 			if (ch >= 0x61 && ch <= 0x7A) ch &= 0xDF;
 			
+			if((ch != 0x20) && (ch != 0x08) && (ch != 0x0D) && (ch < 0x30 || (ch > 0x39 && ch < 0x40) || (ch > 0x5A))) continue;
 			if(ch != 0x08) putchar(ch); // The backspace will be handled below
 
 			switch(ch) {
@@ -107,6 +109,7 @@ void main(void) {
 						console_printString(MONITOR_ERR_MSG);
 					} else {
                         if(buf_idx == 0) {
+                            if(ch == 0x20) { putchar(0x08); break; };
                             putchar(' ');
                             cmd_buffer[buf_idx++] = ch;
                             cmd_buffer[buf_idx++] = ' ';
@@ -133,6 +136,11 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
     }
 
 	switch(cmd[0]) {
+	    case 'T':
+	        // Print the time
+	        clock_get(&clk);
+        	print_clock(&clk);
+	        break;
 		case 'X': // XModem transfer
 		    if(!monitor_strIsValidHex8(&cmd[2]) || !monitor_strIsValidHex8(&cmd[4])) {
 		        console_printString(MONITOR_ERR_MSG);
@@ -240,7 +248,7 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 /*** Monitor Commands ***/
 
 static void print_clock(clock_stat *clk) {
-    printf("\n\rCurrent time -> %02X/%02X/%02X %02X:%02X:%02X %s\n\r", clk->d, clk->M, clk->y, clk->h, clk->m, clk->s, clock_dowName(clk->dow));
+    printf("\n\r%02X/%02X/%02X %02X:%02X:%02X (%s)\n\r", clk->d, clk->M, clk->y, clk->h, clk->m, clk->s, clock_dowName(clk->dow));
 }
 
 static void monitor_read(uint16_t address, uint8_t blocks) {

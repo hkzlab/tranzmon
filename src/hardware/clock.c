@@ -29,36 +29,132 @@ static __sfr __at (CLOCK_BASE+0x0D) CLK_Reg_D;
 static __sfr __at (CLOCK_BASE+0x0E) CLK_Reg_E;
 static __sfr __at (CLOCK_BASE+0x0F) CLK_Reg_F;
 
+static uint8_t raw_rreg(uint8_t reg);
+static uint8_t raw_wreg(uint8_t reg, uint8_t val);
+static uint8_t read_clock_reg(uint8_t reg);
+static void write_clock_reg(uint8_t reg, uint8_t val);
+
+void clock_init(void) {
+    CLK_Reg_F = 0x06;
+    __asm nop __endasm;
+    CLK_Reg_D = 0x04; // Hold bit at 0
+    __asm nop __endasm;
+    CLK_Reg_F = 0x04;
+}
+
 void clock_set(clock_stat *cs) {
+
+}
+
+static uint8_t raw_rreg(uint8_t reg) {
+     switch(reg) {
+        case 0x00: return CLK_Reg_0;
+        case 0x01: return CLK_Reg_1;
+        case 0x02: return CLK_Reg_2;
+        case 0x03: return CLK_Reg_3;
+        case 0x04: return CLK_Reg_4;
+        case 0x05: return CLK_Reg_5;
+        case 0x06: return CLK_Reg_6;
+        case 0x07: return CLK_Reg_7;
+        case 0x08: return CLK_Reg_8;
+        case 0x09: return CLK_Reg_9;
+        case 0x0A: return CLK_Reg_A;
+        case 0x0B: return CLK_Reg_B;
+        case 0x0C: return CLK_Reg_C;
+        case 0x0D: return CLK_Reg_D;
+        case 0x0E: return CLK_Reg_E;
+        default:
+        case 0x0F: return CLK_Reg_F;
+    }   
+}
+
+static uint8_t raw_wreg(uint8_t reg, uint8_t val) {
+     switch(reg) {
+        case 0x00: CLK_Reg_0 = val; break;
+        case 0x01: CLK_Reg_1 = val; break;
+        case 0x02: CLK_Reg_2 = val; break;
+        case 0x03: CLK_Reg_3 = val; break;
+        case 0x04: CLK_Reg_4 = val; break;
+        case 0x05: CLK_Reg_5 = val; break;
+        case 0x06: CLK_Reg_6 = val; break;
+        case 0x07: CLK_Reg_7 = val; break;
+        case 0x08: CLK_Reg_8 = val; break;
+        case 0x09: CLK_Reg_9 = val; break;
+        case 0x0A: CLK_Reg_A = val; break;
+        case 0x0B: CLK_Reg_B = val; break;
+        case 0x0C: CLK_Reg_C = val; break;
+        case 0x0D: CLK_Reg_D = val; break;
+        case 0x0E: CLK_Reg_E = val; break;
+        default:
+        case 0x0F: CLK_Reg_F = val; break;
+    }   
+}
+
+static uint8_t read_clock_reg(uint8_t reg) {
+    uint8_t temp_val;
+
+    while(1) {
+        CLK_Reg_D = 0x05; // HOLD bit at 1
+        if(CLK_Reg_D & 0x02) {
+            CLK_Reg_D = 0x04; // HOLD at 0
+            __asm
+                nop
+                nop
+                nop
+            __endasm;
+        } else break;
+    }
+    
+    temp_val = raw_rreg(reg);
+    CLK_Reg_D = 0x04; // HOLD at 0
+    
+    return temp_val;
+}
+
+static void write_clock_reg(uint8_t reg, uint8_t val) {
+    while(1) {
+        CLK_Reg_D = 0x05; // HOLD bit at 1
+        if(CLK_Reg_D & 0x02) {
+            CLK_Reg_D = 0x04; // HOLD at 0
+            __asm
+                nop
+                nop
+                nop
+            __endasm;
+        } else break;
+    }
+    
+    raw_wreg(reg, val);
+    CLK_Reg_D = 0x04; // HOLD at 0
 }
 
 void clock_get(clock_stat *cs) {
     // Seconds
-    cs->s = CLK_Reg_0 & 0x0F;
-    cs->s |= (CLK_Reg_1 & 0x07) << 4;
+    cs->s = read_clock_reg(0x00) & 0x0F;
+    cs->s |= (read_clock_reg(0x01) & 0x07) << 4;
     
     // Minutes
-    cs->m = CLK_Reg_2 & 0x0F;
-    cs->m |= (CLK_Reg_3 & 0x07) << 4;
+    cs->m = read_clock_reg(0x02) & 0x0F;
+    cs->m |= (read_clock_reg(0x03) & 0x07) << 4;
     
     // Hours
-    cs->h = CLK_Reg_4 & 0x0F;
-    cs->h |= (CLK_Reg_5 & 0x03) << 4;
+    cs->h = read_clock_reg(0x04) & 0x0F;
+    cs->h |= (read_clock_reg(0x05) & 0x03) << 4;
     
     // Day
-    cs->d = CLK_Reg_6 & 0x0F;
-    cs->d |= (CLK_Reg_7 & 0x03) << 4;   
+    cs->d = read_clock_reg(0x06) & 0x0F;
+    cs->d |= (read_clock_reg(0x07) & 0x03) << 4;   
     
     // Month
-    cs->M = CLK_Reg_8 & 0x0F;
-    cs->M |= (CLK_Reg_9 & 0x01) << 4;
+    cs->M = read_clock_reg(0x08) & 0x0F;
+    cs->M |= (read_clock_reg(0x09) & 0x01) << 4;
         
     // Year
-    cs->y = CLK_Reg_A & 0x0F;
-    cs->y |= (CLK_Reg_B & 0x0F) << 4;
-        
+    cs->y = read_clock_reg(0x0A) & 0x0F;
+    cs->y |= (read_clock_reg(0x0B) & 0x0F) << 4;
+  
     // DOW
-    cs->dow = CLK_Reg_C ^ 0x07;
+    cs->dow = read_clock_reg(0x0C) & 0x07;
 }
 
 char *clock_dowName(uint8_t dow) {
