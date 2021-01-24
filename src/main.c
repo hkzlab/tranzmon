@@ -171,7 +171,7 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 		        return;
 		    }
 		    
-		    printf("\n\rXMODEM upload to -> 0x%04X\n\r", address);
+		    printf("\n\rXMODEM upload to @ 0x%04X\n\r", address);
 		   
 			if(!xmodem_receive((uint8_t*)address)) console_printString("\n\rUpload failed!\n\r");
 			else console_printString("\n\rUpload completed.\n\r");
