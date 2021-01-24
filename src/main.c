@@ -12,6 +12,8 @@
 
 #include "utilities.h"
 
+#define FREE_RAM_START 0x8800
+
 #define CMD_BUF_SIZE 15
 
 #define ANSI_CLRSCR "\x1b[2J\x1b[0m"
@@ -19,26 +21,24 @@
 #define MONITOR_CMD_PROMPT "\r\n] "
 #define MONITOR_ERR_MSG "\r\nERROR!\r\n"
 
-#define STR_BUFF_LEN 13
-
 extern char str_appname;
 extern char str_clrscr;
 
-static char mon_buff[STR_BUFF_LEN];
 static char cmd_buffer[CMD_BUF_SIZE];
 
 /******/
 void pio_isr (void) __interrupt(0x10);
 
-void monitor_parse_command(char *cmd, uint8_t idx);
+static void monitor_parse_command(char *cmd, uint8_t idx);
 
 /**/
-void monitor_outp(uint8_t port, uint8_t data);
-uint8_t monitor_inp(uint8_t port);
-void monitor_jmp(uint8_t *addr);
+static void sys_init(void);
+static void monitor_outp(uint8_t port, uint8_t data);
+static uint8_t monitor_inp(uint8_t port);
+static void monitor_jmp(uint8_t *addr);
 
 /** Here lies the code **/
-void sys_init(void) {
+static void sys_init(void) {
 	pio_init();
 	disp_init();
 	disp_clear();
@@ -102,7 +102,11 @@ void main(void) {
 						cmd_read_loop = 0;
 						console_printString(MONITOR_ERR_MSG);
 					} else {
-						cmd_buffer[buf_idx++] = ch;
+                        if(buf_idx == 0) {
+                            putchar(' ');
+                            cmd_buffer[buf_idx++] = ch;
+                            cmd_buffer[buf_idx++] = ' ';
+                        } else cmd_buffer[buf_idx++] = ch;
 					}
 					break;
 			}
@@ -113,31 +117,47 @@ void main(void) {
 
 /***/
 
-void monitor_parse_command(char *cmd, uint8_t idx) {
-	uint8_t val;
+static void monitor_parse_command(char *cmd, uint8_t idx) {
+	uint8_t val, port;
+	uint16_t address;
 
 	if (!idx) return; // Nothing to execute
 
-	mon_buff[0] = '\r';
-	mon_buff[1] = '\n';
+    if(cmd[1] != ' ') {
+        console_printString(MONITOR_ERR_MSG);
+        return;
+    }
 
 	switch(cmd[0]) {
 		case 'X': // XModem transfer
-			xmodem_receive((uint8_t*)monitor_parseU16(&cmd[1]));
+		    if(!monitor_strIsValidHex8(&cmd[2]) || !monitor_strIsValidHex8(&cmd[4])) {
+		        console_printString(MONITOR_ERR_MSG);
+		        return;
+		    }
+		    
+		    address = monitor_parseU16(&cmd[2]);
+		    if(address < FREE_RAM_START) {
+		        printf("\n\rUploads are allowed only after 0x%04X\n\r", FREE_RAM_START);
+		        return;
+		    }
+		    
+		    printf("\n\rXMODEM upload to -> 0x%04X\n\r", address);
+		   
+			if(!xmodem_receive((uint8_t*)address)) console_printString("\n\rUpload failed.\n\r");
+			else console_printString("\n\rUpload completed.\n\r");
 			break;
 		case 'I': // IN
-			val = monitor_inp(monitor_parseU8(&cmd[1]));
+		    if(!monitor_strIsValidHex8(&cmd[2])) {
+		            console_printString(MONITOR_ERR_MSG);
+		            return;		        
+		    }
+		    
+		    port = monitor_parseU8(&cmd[2]);
+			val = monitor_inp(port);
 			
-			// Prepare the string to print
-			monitor_printU8(val, &mon_buff[6]);
-			mon_buff[2] = cmd[1];
-			mon_buff[3] = cmd[2];
-			mon_buff[4] = mon_buff[5] = ' ';
-			mon_buff[8] = 0;
-
-			console_printString(mon_buff);
+			printf("\n\rIN(0x%02X) -> 0x%02X\n\r", port, val);
 			break;
-		case 'R': // READ
+/*		case 'R': // READ
 			val = *((uint8_t*)monitor_parseU16(&cmd[1]));
 
 			// Prepare the string to print
@@ -151,11 +171,30 @@ void monitor_parse_command(char *cmd, uint8_t idx) {
 		case 'W': // WRITE
 			*((uint8_t*)monitor_parseU16(&cmd[1])) = monitor_parseU8(&cmd[6]);
 			break;
+*/
 		case 'J': // JP
-			monitor_jmp((uint8_t*)monitor_parseU16(&cmd[1]));
+		    if(!monitor_strIsValidHex8(&cmd[2]) || !monitor_strIsValidHex8(&cmd[4])) {
+		        console_printString(MONITOR_ERR_MSG);
+		        return;
+		    }
+		    
+		    address = monitor_parseU16(&cmd[2]);
+			printf("\n\rJUMPING to 0x%04X\n\r", address);
+					    
+			monitor_jmp((uint8_t*)address);
 			break;
 		case 'O': // OUT
-			monitor_outp(monitor_parseU8(&cmd[1]), monitor_parseU8(&cmd[4]));
+	        if(!monitor_strIsValidHex8(&cmd[2]) || !monitor_strIsValidHex8(&cmd[5]) || cmd[4] != ' ') {
+		        console_printString(MONITOR_ERR_MSG);
+		        return;		        
+		    }
+		    
+		    port = monitor_parseU8(&cmd[2]);
+		    val = monitor_parseU8(&cmd[5]);
+		    
+		    printf("\n\rOUT(0x%02X) <- 0x%02X\n\r", port, val);
+		    
+			monitor_outp(port, val);
 			break;
 		default:
 			console_printString(MONITOR_ERR_MSG);
@@ -167,7 +206,7 @@ void monitor_parse_command(char *cmd, uint8_t idx) {
 
 /*** Monitor Commands ***/
 
-void monitor_jmp(uint8_t *addr) __naked {
+static void monitor_jmp(uint8_t *addr) __naked {
 	addr;
 
 	__asm
@@ -177,7 +216,7 @@ void monitor_jmp(uint8_t *addr) __naked {
 	__endasm;
 }
 
-void monitor_outp(uint8_t port, uint8_t data) __naked {
+static void monitor_outp(uint8_t port, uint8_t data) __naked {
 	port; data;
 
 	__asm
@@ -199,7 +238,7 @@ void monitor_outp(uint8_t port, uint8_t data) __naked {
 	__endasm;
 }
 
-uint8_t monitor_inp(uint8_t port) __naked {
+static uint8_t monitor_inp(uint8_t port) __naked {
 	port;
 
 	__asm

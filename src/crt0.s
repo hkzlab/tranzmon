@@ -59,7 +59,8 @@ inttbl:
 	.org    0x0040
 init:
 	;; Stack at the top of memory.
-	ld	sp,#0xFFFF
+	;;ld	sp,#0xFFFF
+	ld sp,#0x87FF ;; Reserve 2kb of ram for the monitor
 
     ;; Setup the interrupts: http://www.z80.info/1653.htm
     ;; In mode 2, when interrupting, a device will automatically place a vector address (8 bits) on the data bus

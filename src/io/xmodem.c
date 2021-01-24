@@ -53,8 +53,13 @@ uint8_t xmodem_receive(uint8_t* dest) {
                     } else {
                         nack_retries = 0xFF;
                         if(last_pkt_num != packet_buf[1]) { // Upload this only if it is not a retransmission
-                            //xmodem_upload_packet(pkt_dest);
-                            //pkt_dest += XMODEM_DATA_SIZE;
+                            if((uint16_t)pkt_dest == 0x0000) {
+                                dart_write(PORT_B, NACK);
+                                return 0; // Immediate failure, we wrapped around the memory
+                            }
+                        
+                            xmodem_upload_packet(pkt_dest);
+                            pkt_dest += XMODEM_DATA_SIZE;
                             last_pkt_num = packet_buf[1] & 0xFF;
                         }
                         dart_write(PORT_B, ACK);

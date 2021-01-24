@@ -2,6 +2,17 @@
 
 #include <hardware/ctc.h>
 
+uint8_t monitor_strIsValidHex8(char *str) {
+    for(uint8_t idx = 0; idx < 2; idx++) {
+        if((str[idx] < 0x30) || 
+		   (str[idx] > 0x39 && str[idx] < 0x41) ||
+		   (str[idx] > 0x46 && str[idx] < 0x61) ||
+		   (str[idx] > 0x66)) return 0;
+    }
+    
+    return 1;
+}
+
 uint8_t monitor_parseU8(char *str) {
 	uint8_t val = 0, idx;
 	char ch;
@@ -9,12 +20,12 @@ uint8_t monitor_parseU8(char *str) {
 	for (idx = 0; idx < 2; idx++) {
 		ch = str[1 - idx];
 
-//		if ((ch >= 0x61) && (ch <= 0x66))
-//			ch -= 0x20;
+		if ((ch >= 0x61) && (ch <= 0x66))
+			ch -= 0x20;
 
-		if ((ch >= 0x41) /*&& (ch <= 0x46)*/)
+		if ((ch >= 0x41) && (ch <= 0x46))
 			val |= (ch - 55) << (4 * idx); // Convert from ASCII to value
-		else if (/*(ch >= 0x30) &&*/ (ch <= 0x39))
+		else if ((ch >= 0x30) && (ch <= 0x39))
 			val |= (ch - 48) << (4 * idx); // Convert from ASCII to value
 	}
 
