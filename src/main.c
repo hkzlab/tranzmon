@@ -15,7 +15,7 @@
 
 #define FREE_RAM_START 0x8800
 
-#define CMD_BUF_SIZE 15
+#define CMD_BUF_SIZE 16
 
 #define ANSI_CLRSCR "\x1b[2J\x1b[0m"
 
@@ -78,6 +78,7 @@ void main(void) {
 	disp_clear();
 
 	while(1) { // Endless loop
+	    memset(cmd_buffer, 0, CMD_BUF_SIZE);
 		console_printString(MONITOR_CMD_PROMPT);
 
 		cmd_read_loop = 1;
@@ -137,6 +138,23 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 
 	switch(cmd[0]) {
 	    case 'T':
+	        val = 1;
+	        for(uint8_t idx = 2; idx < 16; idx+=2) if(!monitor_strIsValidHex8(&cmd[idx])) { val = 0; break; };
+	        
+	        if(val) { // Valid date given, setting the clock
+	            // ddMMyyhhmmssdw
+	            clk.d = monitor_parseU8(&cmd[2]);
+	            clk.M = monitor_parseU8(&cmd[4]);
+	            clk.y = monitor_parseU8(&cmd[6]);
+	            clk.h = monitor_parseU8(&cmd[8]);
+	            clk.m = monitor_parseU8(&cmd[10]);
+	            clk.s = monitor_parseU8(&cmd[12]);	
+	            clk.dow = monitor_parseU8(&cmd[14]);	                        
+	            clock_set(&clk);
+	            
+	            printf("\r\nClock updated!");
+	        }
+	    
 	        // Print the time
 	        clock_get(&clk);
         	print_clock(&clk);
