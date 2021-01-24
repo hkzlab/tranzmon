@@ -36,6 +36,7 @@ static void sys_init(void);
 static void monitor_outp(uint8_t port, uint8_t data);
 static uint8_t monitor_inp(uint8_t port);
 static void monitor_jmp(uint8_t *addr);
+static void monitor_read(uint16_t address, uint8_t blocks);
 
 /** Here lies the code **/
 static void sys_init(void) {
@@ -118,7 +119,7 @@ void main(void) {
 /***/
 
 static void monitor_parse_command(char *cmd, uint8_t idx) {
-	uint8_t val, port;
+	uint8_t val, port, qty;
 	uint16_t address;
 
 	if (!idx) return; // Nothing to execute
@@ -143,7 +144,7 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 		    
 		    printf("\n\rXMODEM upload to -> 0x%04X\n\r", address);
 		   
-			if(!xmodem_receive((uint8_t*)address)) console_printString("\n\rUpload failed.\n\r");
+			if(!xmodem_receive((uint8_t*)address)) console_printString("\n\rUpload failed!\n\r");
 			else console_printString("\n\rUpload completed.\n\r");
 			break;
 		case 'I': // IN
@@ -155,23 +156,52 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 		    port = monitor_parseU8(&cmd[2]);
 			val = monitor_inp(port);
 			
-			printf("\n\rIN(0x%02X) -> 0x%02X\n\r", port, val);
+			printf("\n\rP:0x%02X -> 0x%02X\n\r", port, val);
 			break;
-/*		case 'R': // READ
-			val = *((uint8_t*)monitor_parseU16(&cmd[1]));
+		case 'R': // READ
+		    if(!monitor_strIsValidHex8(&cmd[2]) || !monitor_strIsValidHex8(&cmd[4]) || !monitor_strIsValidHex8(&cmd[7]) || cmd[6] != ' ') {
+		        console_printString(MONITOR_ERR_MSG);
+		        return;
+		    }
+		    
+		    address = monitor_parseU16(&cmd[2]);
+		    qty = monitor_parseU8(&cmd[7]); // Number of blocks
+		    
+		    monitor_read(address, qty);
 
-			// Prepare the string to print
-			memcpy(mon_buff + 2, &cmd[1], 4);
-			monitor_printU8(val, &mon_buff[8]);
-			mon_buff[6] = mon_buff[7] = ' ';
-			mon_buff[10] = 0;
-
-			console_printString(mon_buff);
 			break;
 		case 'W': // WRITE
-			*((uint8_t*)monitor_parseU16(&cmd[1])) = monitor_parseU8(&cmd[6]);
+		    if(!monitor_strIsValidHex8(&cmd[2]) || !monitor_strIsValidHex8(&cmd[4]) || !monitor_strIsValidHex8(&cmd[7]) || cmd[6] != ' ') {
+		        console_printString(MONITOR_ERR_MSG);
+		        return;
+		    }
+		    address = monitor_parseU16(&cmd[2]);
+		    val = monitor_parseU8(&cmd[7]); // Value to write in RAM
+		    		    
+		   	printf("\n\rA:0x%04X <- 0x%02X\n\r", address, val);
+		    		    		
+			*((uint8_t*)address) = val;
 			break;
-*/
+		case 'F': // FILL
+		    if(!monitor_strIsValidHex8(&cmd[2]) || !monitor_strIsValidHex8(&cmd[4]) || !monitor_strIsValidHex8(&cmd[7]) || !monitor_strIsValidHex8(&cmd[10]) || cmd[6] != ' ' || cmd[9] != ' ') {
+		        console_printString(MONITOR_ERR_MSG);
+		        return;
+		    }
+		    
+		    address = monitor_parseU16(&cmd[2]);
+		    qty = monitor_parseU8(&cmd[10]); // Number of bytes to fill
+		    val = monitor_parseU8(&cmd[7]); // Value to write in RAM
+		    
+		    if(!qty) {
+		        console_printString(MONITOR_ERR_MSG);
+		        return;		        
+		    }
+		    
+		    printf("\n\rA:0x%04X to 0x%04X <- 0x%02X\n\r", address, (address+qty)-1, val);
+		    		    
+		    while(qty--) *((uint8_t*)address++) = val;
+		    		    
+		    break;
 		case 'J': // JP
 		    if(!monitor_strIsValidHex8(&cmd[2]) || !monitor_strIsValidHex8(&cmd[4])) {
 		        console_printString(MONITOR_ERR_MSG);
@@ -192,7 +222,7 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 		    port = monitor_parseU8(&cmd[2]);
 		    val = monitor_parseU8(&cmd[5]);
 		    
-		    printf("\n\rOUT(0x%02X) <- 0x%02X\n\r", port, val);
+		    printf("\n\rP:0x%02X <- 0x%02X\n\r", port, val);
 		    
 			monitor_outp(port, val);
 			break;
@@ -205,6 +235,18 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 }
 
 /*** Monitor Commands ***/
+
+static void monitor_read(uint16_t address, uint8_t blocks) {
+    uint8_t *ptr = (uint8_t*)address;
+    
+    console_printString("\r\n");
+    while(blocks--) {
+        printf("0x%04X: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\r\n",
+            (uint16_t)ptr, ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5], ptr[6], ptr[7], ptr[8],
+            ptr[9], ptr[10], ptr[11], ptr[12], ptr[13], ptr[14], ptr[15]);
+        ptr += 0x10; // Move forward 16 bytes
+    }
+}
 
 static void monitor_jmp(uint8_t *addr) __naked {
 	addr;
