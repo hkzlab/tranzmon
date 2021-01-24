@@ -42,10 +42,6 @@ void clock_init(void) {
     CLK_Reg_F = 0x04;
 }
 
-void clock_set(clock_stat *cs) {
-
-}
-
 static uint8_t raw_rreg(uint8_t reg) {
      switch(reg) {
         case 0x00: return CLK_Reg_0;
@@ -155,6 +151,35 @@ void clock_get(clock_stat *cs) {
   
     // DOW
     cs->dow = read_clock_reg(0x0C) & 0x07;
+}
+
+void clock_set(clock_stat *cs) {
+    // Seconds
+    write_clock_reg(0x00, cs->s & 0x0F);
+    write_clock_reg(0x01, (cs->s >> 4) & 0x07);
+    
+    // Minutes
+    write_clock_reg(0x02, cs->m & 0x0F);
+    write_clock_reg(0x03, (cs->m >> 4) & 0x07);
+    
+    // Hours
+    write_clock_reg(0x04, cs->h & 0x0F);
+    write_clock_reg(0x05, (cs->h >> 4) & 0x03);
+    
+    // Day
+    write_clock_reg(0x06, cs->d & 0x0F);
+    write_clock_reg(0x07, (cs->d >> 4) & 0x03);
+    
+    // Month
+    write_clock_reg(0x08, cs->M & 0x0F);
+    write_clock_reg(0x09, (cs->M >> 4) & 0x01);
+    
+    // Year
+    write_clock_reg(0x0A, cs->y & 0x0F);
+    write_clock_reg(0x0B, (cs->y >> 4) & 0x0F);
+    
+    // DOW
+    write_clock_reg(0x0C, cs->dow & 0x07);
 }
 
 char *clock_dowName(uint8_t dow) {
