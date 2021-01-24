@@ -6,7 +6,7 @@
 #include <hardware/pio.h>
 #include <hardware/ctc.h>
 #include <hardware/dart.h>
-#include <hardware/clock.h>
+#include <hardware/rtc.h>
 
 #include <io/console.h>
 #include <io/xmodem.h>
@@ -26,7 +26,7 @@ extern char str_appname;
 extern char str_clrscr;
 
 static char cmd_buffer[CMD_BUF_SIZE];
-static clock_stat clk;
+static rtc_stat clk;
 
 /******/
 void pio_isr (void) __interrupt(0x10);
@@ -35,7 +35,7 @@ static void monitor_parse_command(char *cmd, uint8_t idx);
 
 /**/
 static void sys_init(void);
-static void print_clock(clock_stat *clk);
+static void print_rtc(rtc_stat *clk);
 static void monitor_outp(uint8_t port, uint8_t data);
 static uint8_t monitor_inp(uint8_t port);
 static void monitor_jmp(uint8_t *addr);
@@ -46,7 +46,7 @@ static void sys_init(void) {
 	pio_init();
 	disp_init();
 	disp_clear();
-	clock_init();
+	rtc_init();
 	clk_ser_init();
 	tick_init();
 	dart_init();
@@ -71,8 +71,8 @@ void main(void) {
 	printf("%s\n\r%s", ANSI_CLRSCR, &str_appname);
 	
 	// Print the time
-	clock_get(&clk);
-	print_clock(&clk);
+	rtc_get(&clk);
+	print_rtc(&clk);
 	
 	delay_ms_ctc(2000);
 	disp_clear();
@@ -150,14 +150,14 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 	            clk.m = monitor_parseU8(&cmd[10]);
 	            clk.s = monitor_parseU8(&cmd[12]);	
 	            clk.dow = monitor_parseU8(&cmd[14]);	                        
-	            clock_set(&clk);
+	            rtc_set(&clk);
 	            
-	            printf("\r\nClock updated!");
+	            printf("\r\nRTC updated!");
 	        }
 	    
 	        // Print the time
-	        clock_get(&clk);
-        	print_clock(&clk);
+	        rtc_get(&clk);
+        	print_rtc(&clk);
 	        break;
 		case 'X': // XModem transfer
 		    if(!monitor_strIsValidHex8(&cmd[2]) || !monitor_strIsValidHex8(&cmd[4])) {
@@ -276,8 +276,8 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 
 /*** Monitor Commands ***/
 
-static void print_clock(clock_stat *clk) {
-    printf("\n\r%02X/%02X/%02X %02X:%02X:%02X (%s)\n\r", clk->d, clk->M, clk->y, clk->h, clk->m, clk->s, clock_dowName(clk->dow));
+static void print_rtc(rtc_stat *clk) {
+    printf("\n\r%02X/%02X/%02X %02X:%02X:%02X (%s)\n\r", clk->d, clk->M, clk->y, clk->h, clk->m, clk->s, rtc_dowName(clk->dow));
 }
 
 static void monitor_read(uint16_t address, uint8_t blocks) {

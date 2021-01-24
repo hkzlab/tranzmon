@@ -58,7 +58,7 @@ $(BIN_DIR)/$(TARGET).ihx:	$(BIN_DIR)/crt0.rel $(BIN_DIR)/main.rel \
 							$(BIN_DIR)/utilities.rel \
 							$(BIN_DIR)/console.rel \
 						    $(BIN_DIR)/xmodem.rel \
-						    $(BIN_DIR)/clock.rel
+						    $(BIN_DIR)/rtc.rel
 	$(CCC) $(CLD_FLAGS) $(CCC_FLAGS) $(BIN_DIR)/crt0.rel $(BIN_DIR)/main.rel \
 		$(BIN_DIR)/pio.rel \
 		$(BIN_DIR)/ctc.rel \
@@ -66,7 +66,7 @@ $(BIN_DIR)/$(TARGET).ihx:	$(BIN_DIR)/crt0.rel $(BIN_DIR)/main.rel \
 		$(BIN_DIR)/utilities.rel \
 	    $(BIN_DIR)/console.rel \
 	    $(BIN_DIR)/xmodem.rel \
-	    $(BIN_DIR)/clock.rel \
+	    $(BIN_DIR)/rtc.rel \
 		-o $(BIN_DIR)/$(TARGET).ihx
 
 $(BIN_DIR)/crt0.rel: $(SRC_DIR)/crt0.s
@@ -87,8 +87,8 @@ $(BIN_DIR)/ctc.rel: $(SRC_DIR)/hardware/ctc.c
 $(BIN_DIR)/dart.rel: $(SRC_DIR)/hardware/dart.c
 	$(CCC) $(CCC_FLAGS) -c -o $(BIN_DIR) $(SRC_DIR)/hardware/dart.c
 
-$(BIN_DIR)/clock.rel: $(SRC_DIR)/hardware/clock.c
-	$(CCC) $(CCC_FLAGS) -c -o $(BIN_DIR) $(SRC_DIR)/hardware/clock.c
+$(BIN_DIR)/rtc.rel: $(SRC_DIR)/hardware/rtc.c
+	$(CCC) $(CCC_FLAGS) -c -o $(BIN_DIR) $(SRC_DIR)/hardware/rtc.c
 	
 $(BIN_DIR)/console.rel: $(SRC_DIR)/io/console.c
 	$(CCC) $(CCC_FLAGS) -c -o $(BIN_DIR) $(SRC_DIR)/io/console.c
