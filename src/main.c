@@ -255,6 +255,17 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 		    
 			monitor_outp(port, val);
 			break;
+	    case 'H': // Help
+	        printf( "\n\rO xx yy          -> Output value yy to port xx" \
+	                "\n\rI xx             -> Input fom port xx" \
+	                "\n\rJ xxxx           -> Jump to address xxxx" \
+	                "\n\rF xxxx yy zz     -> Fill zz bytes of RAM with yy starting @xxxx" \
+	                "\n\rW xxxx yy        -> Write zz @ address xxxx" \
+	                "\n\rR xxxx yy        -> Print yy 16b blocks of RAM starting @xxxx" \
+	                "\n\rX xxxx           -> Upload data via XMODEM @ address xxxx" \
+	                "\n\rT ddMMyyhhmmssdw -> Show or set current date" \
+	                "\n\r");
+	        break;
 		default:
 			console_printString(MONITOR_ERR_MSG);
 			break;
