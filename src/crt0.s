@@ -29,7 +29,7 @@
     ;; Strings and other static data
     .org    0x7D00
 _str_appname:
-    .asciz  "TranzMON v0.1"
+    .asciz  "TranzMON v0.4"
 
 	;; Setup the function pointers at the end of the EPROM
 	.org	0x7F00
