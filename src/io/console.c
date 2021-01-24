@@ -15,6 +15,7 @@ void putchar(char ch) {
 }
 
 char getchar(void) {
+    dart_signalClearToSend_B();
     return dart_read(PORT_B);
 }
 

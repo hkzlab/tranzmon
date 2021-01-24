@@ -85,6 +85,7 @@ static uint8_t xmodem_sync(uint8_t tries) {
     
         dart_write(PORT_B, SYNC);
         while((get_tick() - now) < 3000) { // Wait 3 seconds before putting out another SYNC
+            dart_signalClearToSend_B();
             if(dart_dataAvailable(PORT_B)) return 1; // Got something!!!
         }
     }
@@ -109,6 +110,7 @@ static uint8_t xmodem_recv_pkt(void) {
     uint32_t now = 0;
 
     while(didx < XMODEM_PKT_SIZE) {
+        dart_signalClearToSend_B();
         if(dart_dataAvailable(PORT_B)) {
             last_data = get_tick();
 
