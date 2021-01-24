@@ -30,7 +30,7 @@ static __sfr __at (CLOCK_BASE+0x0E) CLK_Reg_E;
 static __sfr __at (CLOCK_BASE+0x0F) CLK_Reg_F;
 
 static uint8_t raw_rreg(uint8_t reg);
-static uint8_t raw_wreg(uint8_t reg, uint8_t val);
+static void raw_wreg(uint8_t reg, uint8_t val);
 static uint8_t read_clock_reg(uint8_t reg);
 static void write_clock_reg(uint8_t reg, uint8_t val);
 
@@ -68,7 +68,7 @@ static uint8_t raw_rreg(uint8_t reg) {
     }   
 }
 
-static uint8_t raw_wreg(uint8_t reg, uint8_t val) {
+static void raw_wreg(uint8_t reg, uint8_t val) {
      switch(reg) {
         case 0x00: CLK_Reg_0 = val; break;
         case 0x01: CLK_Reg_1 = val; break;
