@@ -332,7 +332,7 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 	        }
 	        
 	        printf( "\n\rO xx yy          -> Output value yy to port xx" \
-	                "\n\rI xx             -> Input fom port xx" \
+	                "\n\rI xx             -> Input from port xx" \
 	                "\n\rJ xxxx           -> Jump to address xxxx" \
 	                "\n\rF xxxx yy zz     -> Fill zz bytes of RAM with yy starting @xxxx" \
 	                "\n\rW xxxx yy        -> Write zz @ address xxxx" \
