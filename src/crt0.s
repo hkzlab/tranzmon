@@ -75,7 +75,8 @@ init:
 
     ;; Clear the RAM
     xor a           ;; Clear register 'a'
-    ld bc,#0x8000   ;; Times that the ldir command will repeat
+    ;;ld bc,#0x8000   ;; Times that the ldir command will repeat
+    ld bc,#0x0800   ;; Clear only the 2kb used by the monitor
     ld hl,#0x8000   ;; Point 'hl' to the start of RAM
     ld de,#0x8001   ;; Put location of RAM+1 here
     ld (hl),a       ;; Clear the location
