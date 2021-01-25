@@ -18,3 +18,7 @@ char getchar(void) {
     return dart_read(PORT_B);
 }
 
+uint8_t console_dataAvailable(void) {
+    return dart_dataAvailable(PORT_B);
+}
+

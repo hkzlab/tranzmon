@@ -7,6 +7,7 @@
 #include <hardware/ctc.h>
 #include <hardware/dart.h>
 #include <hardware/rtc.h>
+#include <hardware/display.h>
 
 #include <io/console.h>
 #include <io/xmodem.h>
@@ -84,41 +85,43 @@ void main(void) {
 		cmd_read_loop = 1;
 		buf_idx = 0;
 		while(cmd_read_loop) {
-			ch = getchar(); // Read a char
-			
-			// Turn the letter uppercase for parsing purposes
-			if (ch >= 0x61 && ch <= 0x7A) ch &= 0xDF;
-			
-			if((ch != 0x20) && (ch != 0x08) && (ch != 0x0D) && (ch < 0x30 || (ch > 0x39 && ch < 0x40) || (ch > 0x5A))) continue;
-			if(ch != 0x08) putchar(ch); // The backspace will be handled below
+		    if(console_dataAvailable()) {
+			    ch = getchar(); // Read a char
+			    
+			    // Turn the letter uppercase for parsing purposes
+			    if (ch >= 0x61 && ch <= 0x7A) ch &= 0xDF;
+			    
+			    if((ch != 0x20) && (ch != 0x08) && (ch != 0x0D) && (ch < 0x30 || (ch > 0x39 && ch < 0x40) || (ch > 0x5A))) continue;
+			    if(ch != 0x08) putchar(ch); // The backspace will be handled below
 
-			switch(ch) {
-				case 0x0D: // CR
-					monitor_parse_command(cmd_buffer, buf_idx);	
-					cmd_read_loop = 0;
-					break;
-				case 0x08: // Backspace
-				    cmd_buffer[buf_idx] = 0;
-				    if(buf_idx > 0) {
-				        putchar(0x08); putchar(' '); putchar(0x08); // Clear the previous char
-				        buf_idx--;
-				    }
-				    break;
-				default:
-					if(buf_idx >= CMD_BUF_SIZE) { // Command exceeded the maximum length, clearing!
-						cmd_read_loop = 0;
-						console_printString(MONITOR_ERR_MSG);
-					} else {
-                        if(buf_idx == 0) {
-                            if(ch == 0x20) { putchar(0x08); break; };
-                            putchar(' ');
-                            cmd_buffer[buf_idx++] = ch;
-                            cmd_buffer[buf_idx++] = ' ';
-                        } else cmd_buffer[buf_idx++] = ch;
-					}
-					break;
-			}
+			    switch(ch) {
+				    case 0x0D: // CR
+					    monitor_parse_command(cmd_buffer, buf_idx);	
+					    cmd_read_loop = 0;
+					    break;
+				    case 0x08: // Backspace
+				        cmd_buffer[buf_idx] = 0;
+				        if(buf_idx > 0) {
+				            putchar(0x08); putchar(' '); putchar(0x08); // Clear the previous char
+				            buf_idx--;
+				        }
+				        break;
+				    default:
+					    if(buf_idx >= CMD_BUF_SIZE) { // Command exceeded the maximum length, clearing!
+						    cmd_read_loop = 0;
+						    console_printString(MONITOR_ERR_MSG);
+					    } else {
+                            if(buf_idx == 0) {
+                                if(ch == 0x20) { putchar(0x08); break; };
+                                putchar(' ');
+                                cmd_buffer[buf_idx++] = ch;
+                                cmd_buffer[buf_idx++] = ' ';
+                            } else cmd_buffer[buf_idx++] = ch;
+					    }
+					    break;
+			    }
 
+		    }
 		}
 	}
 }

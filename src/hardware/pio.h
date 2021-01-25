@@ -5,7 +5,6 @@
 
 void pio_init(void);
 void disp_init(void);
-void disp_clear(void);
-void disp_print(char *str);
+void disp_send_byte(uint8_t data);
 
 #endif /* _PIO_HEADER_ */
