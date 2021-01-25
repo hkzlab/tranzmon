@@ -352,7 +352,7 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 /*** Monitor Commands ***/
 
 static void format_rtc_short(rtc_stat *clk, char *buf, uint8_t blink) {
-    sprintf(buf, "%02X/%02X/%02X  %02X%c%02X", clk->d, clk->M, clk->y, clk->h, (blink?':':' '), clk->m);
+    sprintf(buf, "%02X/%02X/%02X  %02X%c%02X ", clk->d, clk->M, clk->y, clk->h, (blink?':':' '), clk->m);
 }
 
 static void print_rtc(rtc_stat *clk) {
