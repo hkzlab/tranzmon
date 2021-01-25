@@ -138,8 +138,13 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 
 	switch(cmd[0]) {
 	    case 'T':
+	        if(idx > 16) {
+	            console_printString(MONITOR_ERR_MSG);
+		        return;
+	        }
+	    
 	        val = 1;
-	        for(uint8_t idx = 2; idx < 16; idx+=2) if(!monitor_strIsValidHex8(&cmd[idx])) { val = 0; break; };
+	        for(uint8_t i = 2; i < 16; i+=2) if(!monitor_strIsValidHex8(&cmd[i])) { val = 0; break; };
 	        
 	        if(val) { // Valid date given, setting the clock
 	            // ddMMyyhhmmssdw
@@ -160,6 +165,11 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
         	print_rtc(&clk);
 	        break;
 		case 'X': // XModem transfer
+		    if(idx > 6) {
+	            console_printString(MONITOR_ERR_MSG);
+		        return;
+	        }
+		
 		    if(!monitor_strIsValidHex8(&cmd[2]) || !monitor_strIsValidHex8(&cmd[4])) {
 		        console_printString(MONITOR_ERR_MSG);
 		        return;
@@ -171,12 +181,17 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 		        return;
 		    }
 		    
-		    printf("\n\rXMODEM upload to @ 0x%04X\n\r", address);
+		    printf("\n\rXMODEM upload @0x%04X\n\r", address);
 		   
 			if(!xmodem_receive((uint8_t*)address)) console_printString("\n\rUpload failed!\n\r");
 			else console_printString("\n\rUpload completed.\n\r");
 			break;
 		case 'I': // IN
+		    if(idx > 4) {
+	            console_printString(MONITOR_ERR_MSG);
+		        return;
+	        }
+	        
 		    if(!monitor_strIsValidHex8(&cmd[2])) {
 		            console_printString(MONITOR_ERR_MSG);
 		            return;		        
@@ -188,6 +203,11 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 			printf("\n\rP:0x%02X -> 0x%02X\n\r", port, val);
 			break;
 		case 'R': // READ
+		    if(idx > 9) {
+	            console_printString(MONITOR_ERR_MSG);
+		        return;
+	        }
+	        
 		    if(!monitor_strIsValidHex8(&cmd[2]) || !monitor_strIsValidHex8(&cmd[4]) || !monitor_strIsValidHex8(&cmd[7]) || cmd[6] != ' ') {
 		        console_printString(MONITOR_ERR_MSG);
 		        return;
@@ -200,6 +220,11 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 
 			break;
 		case 'W': // WRITE
+		    if(idx > 9) {
+	            console_printString(MONITOR_ERR_MSG);
+		        return;
+	        }
+	        
 		    if(!monitor_strIsValidHex8(&cmd[2]) || !monitor_strIsValidHex8(&cmd[4]) || !monitor_strIsValidHex8(&cmd[7]) || cmd[6] != ' ') {
 		        console_printString(MONITOR_ERR_MSG);
 		        return;
@@ -212,6 +237,11 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 			*((uint8_t*)address) = val;
 			break;
 		case 'F': // FILL
+		    if(idx > 12) {
+	            console_printString(MONITOR_ERR_MSG);
+		        return;
+	        }
+	        
 		    if(!monitor_strIsValidHex8(&cmd[2]) || !monitor_strIsValidHex8(&cmd[4]) || !monitor_strIsValidHex8(&cmd[7]) || !monitor_strIsValidHex8(&cmd[10]) || cmd[6] != ' ' || cmd[9] != ' ') {
 		        console_printString(MONITOR_ERR_MSG);
 		        return;
@@ -232,6 +262,11 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 		    		    
 		    break;
 		case 'J': // JP
+		    if(idx > 6) {
+	            console_printString(MONITOR_ERR_MSG);
+		        return;
+	        }
+	        
 		    if(!monitor_strIsValidHex8(&cmd[2]) || !monitor_strIsValidHex8(&cmd[4])) {
 		        console_printString(MONITOR_ERR_MSG);
 		        return;
@@ -243,6 +278,11 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 			monitor_jmp((uint8_t*)address);
 			break;
 		case 'O': // OUT
+		    if(idx > 7) {
+	            console_printString(MONITOR_ERR_MSG);
+		        return;
+	        }
+		
 	        if(!monitor_strIsValidHex8(&cmd[2]) || !monitor_strIsValidHex8(&cmd[5]) || cmd[4] != ' ') {
 		        console_printString(MONITOR_ERR_MSG);
 		        return;		        
@@ -256,6 +296,11 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 			monitor_outp(port, val);
 			break;
 	    case 'H': // Help
+	        if(idx > 2) {
+	            console_printString(MONITOR_ERR_MSG);
+		        return;
+	        }
+	        
 	        printf( "\n\rO xx yy          -> Output value yy to port xx" \
 	                "\n\rI xx             -> Input fom port xx" \
 	                "\n\rJ xxxx           -> Jump to address xxxx" \

@@ -53,7 +53,7 @@ uint8_t xmodem_receive(uint8_t* dest) {
                     } else {
                         nack_retries = 0xFF;
                         if(last_pkt_num != packet_buf[1]) { // Upload this only if it is not a retransmission
-                            if((uint16_t)pkt_dest == 0x0000) {
+                            if((uint16_t)pkt_dest < (uint16_t)dest) {
                                 dart_write(PORT_B, NACK);
                                 return 0; // Immediate failure, we wrapped around the memory
                             }
@@ -90,7 +90,6 @@ static uint8_t xmodem_sync(uint8_t tries) {
     
         dart_write(PORT_B, SYNC);
         while((get_tick() - now) < 3000) { // Wait 3 seconds before putting out another SYNC
-            dart_signalClearToSend_B();
             if(dart_dataAvailable(PORT_B)) return 1; // Got something!!!
         }
     }
@@ -115,7 +114,6 @@ static uint8_t xmodem_recv_pkt(void) {
     uint32_t now = 0;
 
     while(didx < XMODEM_PKT_SIZE) {
-        dart_signalClearToSend_B();
         if(dart_dataAvailable(PORT_B)) {
             last_data = get_tick();
 

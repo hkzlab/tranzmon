@@ -33,20 +33,13 @@ uint8_t dart_txBufferEmpty(DART_Port port) {
     return ((port == PORT_A) ? DART_CtrlA : DART_CtrlB) & 0x04;
 }
 
-void dart_signalClearToSend_B(void) {
-    while(!(DART_CtrlB & 0x20)) __asm nop __endasm; // Check for CTS line to be on
-    DART_CtrlB = 0x05; DART_CtrlB = 0x68 | 0x02; // Enable RTS    
-}
-
 uint8_t dart_read(DART_Port port) {
     switch(port) {
         case PORT_A:
             while(!(DART_CtrlA & 0x01)) __asm nop __endasm;
             return DART_SerA;
         default:
-            while(!(DART_CtrlB & 0x01)) __asm nop __endasm; // Check for data
-            DART_CtrlB = 0x05; DART_CtrlB = 0x68; // Set RTS off
-            
+            while(!(DART_CtrlB & 0x01)) __asm nop __endasm; // Check for data     
             return DART_SerB;
     }
 }
@@ -57,14 +50,9 @@ void dart_write(DART_Port port, uint8_t data) {
             while(!(DART_CtrlA & 0x04)) __asm nop __endasm; // Make sure the buffer is empty
             DART_SerA = data;
             break;
-        case PORT_B: // Port B uses hardware handshaking
+        case PORT_B:
             while(!(DART_CtrlB & 0x04)) __asm nop __endasm; // Make sure the buffer is empty
-            
-            DART_CtrlB = 0x05; DART_CtrlB = 0x68 | 0x02; // Enable RTS
-            while(!(DART_CtrlB & 0x20)) __asm nop __endasm; // Check for CTS
-            DART_CtrlB = 0x05; DART_CtrlB = 0x68 | 0x02 | 0x80; // Enable RTS and DTR
             DART_SerB = data;
-            DART_CtrlB = 0x05; DART_CtrlB = 0x68; // Lower RTS and DTR
             break;
     }
 }
