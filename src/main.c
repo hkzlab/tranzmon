@@ -27,6 +27,7 @@ extern char str_appname;
 extern char str_clrscr;
 
 static char cmd_buffer[CMD_BUF_SIZE];
+static char disp_buffer[DISP_SIZE + 1];
 static uint8_t kb_stat[4];
 static rtc_stat clk;
 
@@ -38,6 +39,7 @@ static void monitor_parse_command(char *cmd, uint8_t idx);
 /**/
 static void sys_init(void);
 static void print_rtc(rtc_stat *clk);
+static void format_rtc_short(rtc_stat *clk, char *buf, uint8_t blink);
 static void monitor_outp(uint8_t port, uint8_t data);
 static uint8_t monitor_inp(uint8_t port);
 static void monitor_jmp(uint8_t *addr);
@@ -64,24 +66,27 @@ static void sys_init(void) {
 }
 
 void main(void) {
+    uint8_t dot_pos = 0;
+    uint16_t loop_count = 0;
+
 	uint8_t buf_idx = 0, cmd_read_loop = 1;
 	uint8_t kb_col = 0, kb_rows = 0;
 	char ch; // Char buffer for data read from console
 
 	// Do basic system initialization
 	sys_init();
-	
+
+    // Clear keypad buffer
+	memset(kb_stat, 0, 4);	
+
 	printf("%s\n\r%s", ANSI_CLRSCR, &str_appname);
 	
 	// Print the time
 	rtc_get(&clk);
 	print_rtc(&clk);
 	
-	delay_ms_ctc(2000);
-	disp_clear();
+	delay_ms_ctc(1000);
 	
-	memset(kb_stat, 0, 4);
-
 	while(1) { // Endless loop
 	    memset(cmd_buffer, 0, CMD_BUF_SIZE);
 		console_printString(MONITOR_CMD_PROMPT);
@@ -133,6 +138,15 @@ void main(void) {
 		    kb_rows = kb_readRows();
 		    if((kb_rows ^ kb_stat[kb_col]) && (~kb_rows & kb_stat[kb_col])) spkr_beep(0x50, 2); // Beep if we detect a new key
 		    kb_stat[kb_col] = kb_rows;
+		    
+		    // Update clock on display
+		    if(!(loop_count & 0xFF)) {
+		        rtc_get(&clk);
+                format_rtc_short(&clk, disp_buffer, (loop_count >> 10) & 0x01);
+                disp_print(disp_buffer);
+		    }
+		    
+		    loop_count++;
 		}
 	}
 }
@@ -286,6 +300,8 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 		        return;
 		    }
 		    
+		    disp_clear();
+		    
 		    address = monitor_parseU16(&cmd[2]);
 			printf("\n\rJUMPING to 0x%04X\n\r", address);
 					    
@@ -334,6 +350,10 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 }
 
 /*** Monitor Commands ***/
+
+static void format_rtc_short(rtc_stat *clk, char *buf, uint8_t blink) {
+    sprintf(buf, "%02X/%02X/%02X  %02X%c%02X", clk->d, clk->M, clk->y, clk->h, (blink?':':' '), clk->m);
+}
 
 static void print_rtc(rtc_stat *clk) {
     printf("\n\r%02X/%02X/%02X %02X:%02X:%02X (%s)\n\r", clk->d, clk->M, clk->y, clk->h, clk->m, clk->s, rtc_dowName(clk->dow));

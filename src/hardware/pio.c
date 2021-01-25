@@ -41,7 +41,7 @@ void disp_init(void) {
     
     PIO_PortA = (ctrl_val | (1 << DISPLAY_RESET));
 
-    disp_send_byte(DISP_DUTY_CYCLE | 0x1F); // Set duty cycle to 31, maximum brightness
+    disp_send_byte(DISP_DUTY_CYCLE | 0x0A); // Set duty cycle to set brightness
 }
 
 void disp_send_byte(uint8_t data) {
