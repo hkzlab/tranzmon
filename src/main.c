@@ -27,6 +27,7 @@ extern char str_appname;
 extern char str_clrscr;
 
 static char cmd_buffer[CMD_BUF_SIZE];
+static uint8_t kb_stat[4];
 static rtc_stat clk;
 
 /******/
@@ -56,7 +57,7 @@ static void sys_init(void) {
 	
 	disp_print(&str_appname);
 	
-	spkr_beep(0x2F); // Beep the speaker!
+	spkr_beep(0x2F, 150); // Beep the speaker!
 	
 	// Enable the interrupts
 	__asm ei __endasm;
@@ -64,6 +65,7 @@ static void sys_init(void) {
 
 void main(void) {
 	uint8_t buf_idx = 0, cmd_read_loop = 1;
+	uint8_t kb_col = 0, kb_rows = 0;
 	char ch; // Char buffer for data read from console
 
 	// Do basic system initialization
@@ -77,6 +79,8 @@ void main(void) {
 	
 	delay_ms_ctc(2000);
 	disp_clear();
+	
+	memset(kb_stat, 0, 4);
 
 	while(1) { // Endless loop
 	    memset(cmd_buffer, 0, CMD_BUF_SIZE);
@@ -122,6 +126,13 @@ void main(void) {
 			    }
 
 		    }
+		    
+		    // Check KB interaction
+		    kb_col = (kb_col + 1)%4;
+		    kb_selectColumn(kb_col);
+		    kb_rows = kb_readRows();
+		    if((kb_rows ^ kb_stat[kb_col]) && (~kb_rows & kb_stat[kb_col])) spkr_beep(0x50, 2); // Beep if we detect a new key
+		    kb_stat[kb_col] = kb_rows;
 		}
 	}
 }

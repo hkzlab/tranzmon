@@ -20,11 +20,11 @@ void spkr_init(void) {
     CTC_Chan2 = 0x03; // Disable interrupts, timer mode, prescale=16, auto-trigger, no time constant
 }
 
-void spkr_beep(uint8_t time_const) {
+void spkr_beep(uint8_t time_const, uint8_t len) {
     CTC_Chan2 = 0x07; // Control, software reset, time constant follows
     CTC_Chan2 = time_const;
     
-    delay_ms(150);
+    delay_ms(len);
     
     CTC_Chan2 = 0x03;
 }
