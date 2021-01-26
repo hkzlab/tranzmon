@@ -13,7 +13,6 @@ static uint8_t kb_stat[4];
 static rtc_stat clk;
 
 static uint16_t keypad_tick_counter;
-static uint8_t kb_col;
 
 static void format_rtc_short(rtc_stat *clk, char *buf);
 
@@ -22,14 +21,13 @@ void keypad_init(void) {
 	memset(kb_stat, 0, 4);	
 	
 	keypad_tick_counter = 0;
-	kb_col = 0;
 }
 
 void keypad_tick(void) {
-    uint8_t kb_rows = 0;
+    uint8_t kb_rows = 0, kb_col;
     
     // Check KB interaction
-    kb_col = (kb_col + 1)%4;
+    kb_col = keypad_tick_counter & 0x03;
     kb_selectColumn(kb_col);
     kb_rows = kb_readRows();
 	if((kb_rows ^ kb_stat[kb_col]) && (~kb_rows & kb_stat[kb_col])) spkr_beep(0x50, 2); // Beep if we detect a new key
@@ -40,6 +38,9 @@ void keypad_tick(void) {
         rtc_get(&clk);
         format_rtc_short(&clk, disp_buffer);
         disp_print(disp_buffer);
+    }
+    
+    if(!kb_col) {
     }
 		    
     keypad_tick_counter++;
