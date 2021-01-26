@@ -10,6 +10,7 @@
 #include "utilities.h"
 
 #define SOH     0x01
+#define ETX     0x03
 #define EOT     0x04
 #define ACK     0x06
 #define NACK    0x15
@@ -46,6 +47,8 @@ uint8_t xmodem_receive(uint8_t* dest) {
             last_packet = get_tick();
 
             switch(packet_buf[0]) {
+                case ETX: // CTRL-C, immediate failure
+                    return 0;
                 case SOH:
                     if(!xmodem_check_packet()) { 
                         nack_retries--;
@@ -119,7 +122,7 @@ static uint8_t xmodem_recv_pkt(void) {
 
             data = dart_read(PORT_B);
             packet_buf[didx] = data;
-            if(!didx && (data == EOT)) break;
+            if(!didx && ((data == EOT) || (data == ETX))) break;
             didx++;
         }
 

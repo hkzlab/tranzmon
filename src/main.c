@@ -205,11 +205,11 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 		    
 		    address = monitor_parseU16(&cmd[2]);
 		    if(address < FREE_RAM_START) {
-		        printf("\n\rUploads are allowed only after 0x%04X\n\r", FREE_RAM_START);
+		        printf("\n\rUploads are allowed only after %04X\n\r", FREE_RAM_START);
 		        return;
 		    }
 		    
-		    printf("\n\rXMODEM upload @0x%04X\n\r", address);
+		    printf("\n\rXMODEM upload @%04X\n\r", address);
 		   
 			if(!xmodem_receive((uint8_t*)address)) console_printString("\n\rUpload failed!\n\r");
 			else console_printString("\n\rUpload completed.\n\r");
@@ -228,7 +228,7 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 		    port = monitor_parseU8(&cmd[2]);
 			val = monitor_inp(port);
 			
-			printf("\n\rP:0x%02X -> 0x%02X\n\r", port, val);
+			printf("\n\rP:%02X -> %02X\n\r", port, val);
 			break;
 		case 'R': // READ
 		    if(idx > 9) {
@@ -260,7 +260,7 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 		    address = monitor_parseU16(&cmd[2]);
 		    val = monitor_parseU8(&cmd[7]); // Value to write in RAM
 		    		    
-		   	printf("\n\rA:0x%04X <- 0x%02X\n\r", address, val);
+		   	printf("\n\rA:%04X <- %02X\n\r", address, val);
 		    		    		
 			*((uint8_t*)address) = val;
 			break;
@@ -284,7 +284,7 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 		        return;		        
 		    }
 		    
-		    printf("\n\rA:0x%04X to 0x%04X <- 0x%02X\n\r", address, (address+qty)-1, val);
+		    printf("\n\rA:%04X to %04X <- %02X\n\r", address, (address+qty)-1, val);
 		    		    
 		    while(qty--) *((uint8_t*)address++) = val;
 		    		    
@@ -303,7 +303,7 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 		    disp_clear();
 		    
 		    address = monitor_parseU16(&cmd[2]);
-			printf("\n\rJUMPING to 0x%04X\n\r", address);
+			printf("\n\rJumping @%04X\n\r", address);
 					    
 			monitor_jmp((uint8_t*)address);
 			break;
@@ -337,7 +337,7 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 	                "\n\rF xxxx yy zz     -> Fill zz bytes of RAM with yy starting @xxxx" \
 	                "\n\rW xxxx yy        -> Write zz @ address xxxx" \
 	                "\n\rR xxxx yy        -> Print yy 16b blocks of RAM starting @xxxx" \
-	                "\n\rX xxxx           -> Upload data via XMODEM @ address xxxx" \
+	                "\n\rX xxxx           -> Upload data via XMODEM @xxxx" \
 	                "\n\rT ddMMyyhhmmssdw -> Show or set current date" \
 	                "\n\r");
 	        break;
