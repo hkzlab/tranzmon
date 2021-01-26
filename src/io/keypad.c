@@ -70,7 +70,7 @@ void keypad_tick(void) {
     kb_col = keypad_tick_counter & 0x03;
     kb_selectColumn(kb_col);
     kb_rows = kb_readRows();
-	if(((kb_rows ^ ~kb_stat[kb_col]) & ~kb_rows) & 0x0F) spkr_beep(0x50, 2); // Beep if we detect a new key
+	if(((kb_rows ^ ~kb_stat[kb_col]) & ~kb_rows) & 0x0F) spkr_beep(0x80, 1); // Beep if we detect a new key
 	kb_stat[kb_col] = ~kb_rows & 0x0F;
 	kb_selectColumn(5); // This will disable every column
 		    
