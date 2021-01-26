@@ -19,7 +19,7 @@
  E 0 F D
 ***/
 
-#define DEFAULT_STATE_TIMEOUT 15000
+#define DEFAULT_STATE_TIMEOUT 10000
 
 #define KP_E(kp, kpb) ((kp[0] & 0x08) && !(kpb[0] & 0x08))
 #define KP_7(kp, kpb) ((kp[0] & 0x04) && !(kpb[0] & 0x04))
@@ -44,6 +44,7 @@
 typedef enum {
     KP_DEFAULT,
     KP_MREAD,
+    KP_MWRITE,
     KP_JMP
 } keypad_sm_state;
 
@@ -56,11 +57,14 @@ static keypad_sm_state sm_state;
 static uint32_t sm_state_time;
 
 static uint16_t s_val16[1];
+static uint16_t s_val8[2];
 
+static uint8_t read_btn(void);
 static void format_rtc_short(rtc_stat *clk, char *buf);
 static void refresh_state(void);
 
 static void state_mread(uint32_t now);
+static void state_mwrite(uint32_t now);
 static void state_default(void);
 
 void keypad_init(void) {
@@ -93,7 +97,6 @@ void keypad_tick(void) {
 static void refresh_state(void) {
     uint32_t now = get_tick();
 
-
     switch(sm_state) {
         case KP_JMP:
             disp_clear();
@@ -104,9 +107,12 @@ static void refresh_state(void) {
             disp_clear();
             monitor_jmp((uint8_t*)s_val16[0]);
             break;
+        case KP_MWRITE:
+            state_mwrite(now);
+            if((now - sm_state_time) >= DEFAULT_STATE_TIMEOUT) { sm_state = KP_MREAD; spkr_beep(0x30, 20); };
+            break;
         case KP_MREAD:
             state_mread(now);
-            //if((now - sm_state_time) >= DEFAULT_STATE_TIMEOUT) { sm_state = KP_DEFAULT; spkr_beep(0x30, 20); };
             break;
         case KP_DEFAULT:
         default:
@@ -127,26 +133,78 @@ static void refresh_state(void) {
     kp_stat_buf[3] = kp_stat[3];
 }
 
+static uint8_t read_btn(void) {
+    uint8_t btn = 0xFF;
+    
+    if(KP_0(kp_stat, kp_stat_buf)) btn = 0x00;
+    else if(KP_1(kp_stat, kp_stat_buf)) btn = 0x01;
+    else if(KP_2(kp_stat, kp_stat_buf)) btn = 0x02;
+    else if(KP_3(kp_stat, kp_stat_buf)) btn = 0x03;    
+    else if(KP_4(kp_stat, kp_stat_buf)) btn = 0x04;
+    else if(KP_5(kp_stat, kp_stat_buf)) btn = 0x05;
+    else if(KP_6(kp_stat, kp_stat_buf)) btn = 0x06;
+    else if(KP_7(kp_stat, kp_stat_buf)) btn = 0x07;
+    else if(KP_8(kp_stat, kp_stat_buf)) btn = 0x08;
+    else if(KP_9(kp_stat, kp_stat_buf)) btn = 0x09;
+    else if(KP_A(kp_stat, kp_stat_buf)) btn = 0x0A;
+    else if(KP_B(kp_stat, kp_stat_buf)) btn = 0x0B;
+    else if(KP_C(kp_stat, kp_stat_buf)) btn = 0x0C;
+    else if(KP_D(kp_stat, kp_stat_buf)) btn = 0x0D;
+    else if(KP_E(kp_stat, kp_stat_buf)) btn = 0x0E;
+    else if(KP_F(kp_stat, kp_stat_buf)) btn = 0x0F;
+    
+    return btn;
+}
+
 static void format_rtc_short(rtc_stat *clk, char *buf) {
     sprintf(buf, "%02X/%02X/%02X  %02X:%02X ", clk->d, clk->M, clk->y, clk->h, clk->m);
 }
 
 /***/
 
+static void state_mwrite(uint32_t now) {
+    char nibA = '_';
+    char nibB = '_';
+    uint8_t btn;
+
+    if(s_val8[0] > 0) nibA = nibble_to_hex(s_val8[1] >> 4);
+    if(s_val8[0] > 1) nibB = nibble_to_hex(s_val8[1]);
+
+    sprintf(disp_buffer, "MW @%04X  %c%c", s_val16[0], nibA, nibB);
+    disp_print(disp_buffer);    
+    
+    if(s_val8[0] > 1) {
+        *((uint8_t*)s_val16[0]) = s_val8[1];
+        sm_state = KP_MREAD;
+        delay_ms_ctc(500);
+        spkr_beep(0x30, 100);
+        return;
+    }
+
+    btn = read_btn();
+    if(btn <= 0x0F) {
+        sm_state_time = now;
+        s_val8[1] |= (btn << ((1-s_val8[0]) * 4));
+        s_val8[0]++;
+    }
+    
+}
+
 static void state_mread(uint32_t now) {
     sprintf(disp_buffer, "MR @%04X  %02X", s_val16[0], *(uint8_t*)s_val16[0]);
     disp_print(disp_buffer);
     
-    if(KP_E(kp_stat, kp_stat_buf)) { s_val16[0] -= 0x01; sm_state_time = now; }
-    else if(KP_F(kp_stat, kp_stat_buf)) { s_val16[0] += 0x01; sm_state_time = now; }
-    else if(KP_7(kp_stat, kp_stat_buf)) { s_val16[0] -= 0x10; sm_state_time = now; }
-    else if(KP_9(kp_stat, kp_stat_buf)) { s_val16[0] += 0x10; sm_state_time = now; }
-    else if(KP_4(kp_stat, kp_stat_buf)) { s_val16[0] -= 0x100; sm_state_time = now; }
-    else if(KP_6(kp_stat, kp_stat_buf)) { s_val16[0] += 0x100; sm_state_time = now; }
-    else if(KP_1(kp_stat, kp_stat_buf)) { s_val16[0] -= 0x1000; sm_state_time = now; }
-    else if(KP_3(kp_stat, kp_stat_buf)) { s_val16[0] += 0x1000; sm_state_time = now; }  
+    if(KP_E(kp_stat, kp_stat_buf)) s_val16[0] -= 0x01;
+    else if(KP_F(kp_stat, kp_stat_buf)) s_val16[0] += 0x01;
+    else if(KP_7(kp_stat, kp_stat_buf)) s_val16[0] -= 0x10;
+    else if(KP_9(kp_stat, kp_stat_buf)) s_val16[0] += 0x10;
+    else if(KP_4(kp_stat, kp_stat_buf)) s_val16[0] -= 0x100;
+    else if(KP_6(kp_stat, kp_stat_buf)) s_val16[0] += 0x100;
+    else if(KP_1(kp_stat, kp_stat_buf)) s_val16[0] -= 0x1000;
+    else if(KP_3(kp_stat, kp_stat_buf)) s_val16[0] += 0x1000;  
     else if(KP_D(kp_stat, kp_stat_buf)) { sm_state = KP_DEFAULT; spkr_beep(0x30, 20); }
-    else if(KP_A(kp_stat, kp_stat_buf)) { sm_state = KP_JMP; }
+    else if(KP_A(kp_stat, kp_stat_buf)) sm_state = KP_JMP;
+    else if(KP_B(kp_stat, kp_stat_buf)) { sm_state = KP_MWRITE; sm_state_time = now; disp_clear(); s_val8[0] = s_val8[1] = 0; }
 }
 
 static void state_default(void) {

@@ -15,4 +15,6 @@ void monitor_outp(uint8_t port, uint8_t data);
 uint8_t monitor_inp(uint8_t port);
 void monitor_jmp(uint8_t *addr);
 
+char nibble_to_hex(uint8_t val);
+
 #endif /* _UTILITIES_HEADER_ */

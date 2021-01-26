@@ -144,5 +144,10 @@ uint8_t monitor_inp(uint8_t port) __naked {
 	__endasm;
 }
 
+char nibble_to_hex(uint8_t val) {
+    uint8_t nib = val & 0x0F;
 
+    if(nib <= 9) return nib + 0x30;
+    else return nib + 0x37;
+}
 
