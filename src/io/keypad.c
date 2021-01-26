@@ -15,7 +15,7 @@ static rtc_stat clk;
 static uint16_t keypad_tick_counter;
 static uint8_t kb_col;
 
-static void format_rtc_short(rtc_stat *clk, char *buf, uint8_t blink);
+static void format_rtc_short(rtc_stat *clk, char *buf);
 
 void keypad_init(void) {
     // Clear keypad buffer
@@ -36,16 +36,16 @@ void keypad_tick(void) {
 	kb_stat[kb_col] = kb_rows;
 		    
     // Update clock on display
-    if(!(keypad_tick_counter & 0xFF)) {
+    if(!(keypad_tick_counter & 0x3FF)) {
         rtc_get(&clk);
-        format_rtc_short(&clk, disp_buffer, (keypad_tick_counter >> 10) & 0x01);
+        format_rtc_short(&clk, disp_buffer);
         disp_print(disp_buffer);
     }
 		    
     keypad_tick_counter++;
 }
 
-static void format_rtc_short(rtc_stat *clk, char *buf, uint8_t blink) {
-    sprintf(buf, "%02X/%02X/%02X  %02X%c%02X ", clk->d, clk->M, clk->y, clk->h, (blink?':':' '), clk->m);
+static void format_rtc_short(rtc_stat *clk, char *buf) {
+    sprintf(buf, "%02X/%02X/%02X  %02X:%02X ", clk->d, clk->M, clk->y, clk->h, clk->m);
 }
 
