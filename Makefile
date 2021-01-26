@@ -59,6 +59,7 @@ $(BIN_DIR)/$(TARGET).ihx:	$(BIN_DIR)/crt0.rel $(BIN_DIR)/main.rel \
 							$(BIN_DIR)/console.rel \
 						    $(BIN_DIR)/xmodem.rel \
 						    $(BIN_DIR)/display.rel \
+						    $(BIN_DIR)/keypad.rel \
 						    $(BIN_DIR)/rtc.rel
 	$(CCC) $(CLD_FLAGS) $(CCC_FLAGS) $(BIN_DIR)/crt0.rel $(BIN_DIR)/main.rel \
 		$(BIN_DIR)/pio.rel \
@@ -68,6 +69,7 @@ $(BIN_DIR)/$(TARGET).ihx:	$(BIN_DIR)/crt0.rel $(BIN_DIR)/main.rel \
 	    $(BIN_DIR)/console.rel \
 	    $(BIN_DIR)/xmodem.rel \
 	    $(BIN_DIR)/display.rel \
+	    $(BIN_DIR)/keypad.rel \
 	    $(BIN_DIR)/rtc.rel \
 		-o $(BIN_DIR)/$(TARGET).ihx
 
@@ -97,6 +99,9 @@ $(BIN_DIR)/display.rel: $(SRC_DIR)/hardware/display.c
 	
 $(BIN_DIR)/console.rel: $(SRC_DIR)/io/console.c
 	$(CCC) $(CCC_FLAGS) -c -o $(BIN_DIR) $(SRC_DIR)/io/console.c
+	
+$(BIN_DIR)/keypad.rel: $(SRC_DIR)/io/keypad.c
+	$(CCC) $(CCC_FLAGS) -c -o $(BIN_DIR) $(SRC_DIR)/io/keypad.c
 	
 $(BIN_DIR)/xmodem.rel: $(SRC_DIR)/io/xmodem.c
 	$(CCC) $(CCC_FLAGS) -c -o $(BIN_DIR) $(SRC_DIR)/io/xmodem.c
