@@ -94,5 +94,55 @@ void delay_ms_ctc(uint16_t delay) {
     while((get_tick()-now) < delay) __asm nop __endasm;
 }
 
+void monitor_jmp(uint8_t *addr) __naked {
+	addr;
+
+	__asm
+		pop bc
+		pop hl
+		jp (hl)
+	__endasm;
+}
+
+void monitor_outp(uint8_t port, uint8_t data) __naked {
+	port; data;
+
+	__asm
+		ld hl, #3
+		add hl, sp
+		ld a, (hl) // Load data from stack
+
+		ld hl, #2
+		add hl, sp
+
+		push bc
+		
+		ld c, (hl) // Load port from stack
+		out (c), a // Output to port
+
+		pop bc
+
+		ret
+	__endasm;
+}
+
+uint8_t monitor_inp(uint8_t port) __naked {
+	port;
+
+	__asm
+		ld hl, #2
+		add hl, sp
+
+		push bc
+
+		ld c, (hl)
+		in l,(c)
+
+		pop bc
+
+		ret
+	__endasm;
+}
+
 
 

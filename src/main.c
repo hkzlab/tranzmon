@@ -38,9 +38,6 @@ static void monitor_parse_command(char *cmd, uint8_t idx);
 /**/
 static void sys_init(void);
 static void print_rtc(rtc_stat *clk);
-static void monitor_outp(uint8_t port, uint8_t data);
-static uint8_t monitor_inp(uint8_t port);
-static void monitor_jmp(uint8_t *addr);
 static void monitor_read(uint16_t address, uint8_t blocks);
 
 /** Here lies the code **/
@@ -343,56 +340,6 @@ static void monitor_read(uint16_t address, uint8_t blocks) {
             ptr[9], ptr[10], ptr[11], ptr[12], ptr[13], ptr[14], ptr[15]);
         ptr += 0x10; // Move forward 16 bytes
     }
-}
-
-static void monitor_jmp(uint8_t *addr) __naked {
-	addr;
-
-	__asm
-		pop bc
-		pop hl
-		jp (hl)
-	__endasm;
-}
-
-static void monitor_outp(uint8_t port, uint8_t data) __naked {
-	port; data;
-
-	__asm
-		ld hl, #3
-		add hl, sp
-		ld a, (hl) // Load data from stack
-
-		ld hl, #2
-		add hl, sp
-
-		push bc
-		
-		ld c, (hl) // Load port from stack
-		out (c), a // Output to port
-
-		pop bc
-
-		ret
-	__endasm;
-}
-
-static uint8_t monitor_inp(uint8_t port) __naked {
-	port;
-
-	__asm
-		ld hl, #2
-		add hl, sp
-
-		push bc
-
-		ld c, (hl)
-		in l,(c)
-
-		pop bc
-
-		ret
-	__endasm;
 }
 
 /***/

@@ -11,4 +11,8 @@ uint8_t monitor_strIsValidHex8(char *str);
 void delay_ms(uint16_t delay) __naked;
 void delay_ms_ctc(uint16_t delay);
 
+void monitor_outp(uint8_t port, uint8_t data);
+uint8_t monitor_inp(uint8_t port);
+void monitor_jmp(uint8_t *addr);
+
 #endif /* _UTILITIES_HEADER_ */

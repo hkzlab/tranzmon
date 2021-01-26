@@ -8,6 +8,8 @@
 #include <hardware/rtc.h>
 #include <hardware/display.h>
 
+#include <utilities.h>
+
 /***
  The keypad:
 
@@ -41,7 +43,8 @@
 
 typedef enum {
     KP_DEFAULT,
-    KP_MREAD
+    KP_MREAD,
+    KP_JMP
 } keypad_sm_state;
 
 static char disp_buffer[DISP_SIZE + 1];
@@ -92,6 +95,15 @@ static void refresh_state(void) {
 
 
     switch(sm_state) {
+        case KP_JMP:
+            disp_clear();
+            sprintf(disp_buffer, "JUMPING @%04X", s_val16[0]);
+            disp_print(disp_buffer);
+            spkr_beep(0x30, 100);
+            delay_ms_ctc(2000);
+            disp_clear();
+            monitor_jmp((uint8_t*)s_val16[0]);
+            break;
         case KP_MREAD:
             state_mread(now);
             //if((now - sm_state_time) >= DEFAULT_STATE_TIMEOUT) { sm_state = KP_DEFAULT; spkr_beep(0x30, 20); };
@@ -134,6 +146,7 @@ static void state_mread(uint32_t now) {
     else if(KP_1(kp_stat, kp_stat_buf)) { s_val16[0] -= 0x1000; sm_state_time = now; }
     else if(KP_3(kp_stat, kp_stat_buf)) { s_val16[0] += 0x1000; sm_state_time = now; }  
     else if(KP_D(kp_stat, kp_stat_buf)) { sm_state = KP_DEFAULT; spkr_beep(0x30, 20); }
+    else if(KP_A(kp_stat, kp_stat_buf)) { sm_state = KP_JMP; }
 }
 
 static void state_default(void) {
