@@ -17,6 +17,8 @@
  E 0 F D
 ***/
 
+#define DEFAULT_STATE_TIMEOUT 15000
+
 #define KP_E(kp, kpb) ((kp[0] & 0x08) && !(kpb[0] & 0x08))
 #define KP_7(kp, kpb) ((kp[0] & 0x04) && !(kpb[0] & 0x04))
 #define KP_4(kp, kpb) ((kp[0] & 0x02) && !(kpb[0] & 0x02))
@@ -30,7 +32,7 @@
 #define KP_F(kp, kpb) ((kp[2] & 0x08) && !(kpb[2] & 0x08))
 #define KP_9(kp, kpb) ((kp[2] & 0x04) && !(kpb[2] & 0x04))
 #define KP_6(kp, kpb) ((kp[2] & 0x02) && !(kpb[2] & 0x02))
-#define KP_3(kp, kpb) ((kp[2] & 0x01) && !(kpb[2] & 0x02))
+#define KP_3(kp, kpb) ((kp[2] & 0x01) && !(kpb[2] & 0x01))
 
 #define KP_D(kp, kpb) ((kp[3] & 0x08) && !(kpb[3] & 0x08))
 #define KP_C(kp, kpb) ((kp[3] & 0x04) && !(kpb[3] & 0x04))
@@ -43,61 +45,74 @@ typedef enum {
 } keypad_sm_state;
 
 static char disp_buffer[DISP_SIZE + 1];
-static uint8_t kb_stat[4], kb_stat_buf[4];
+
+static uint8_t kp_stat[4], kp_stat_buf[4];
 static rtc_stat clk;
 static uint16_t keypad_tick_counter;
 static keypad_sm_state sm_state;
+static uint32_t sm_state_time;
+
+static uint16_t s_val16[1];
 
 static void format_rtc_short(rtc_stat *clk, char *buf);
 static void refresh_state(void);
 
+static void state_mread(uint32_t now);
 static void state_default(void);
 
 void keypad_init(void) {
     // Clear keypad buffer
-	memset(kb_stat, 0, 4);
-	memset(kb_stat_buf, 0, 4);	
+	memset(kp_stat, 0, 4);
+	memset(kp_stat_buf, 0, 4);	
 	
 	keypad_tick_counter = 0;
+	sm_state_time = 0;
 	sm_state = KP_DEFAULT;
 }
 
 void keypad_tick(void) {
-    uint32_t now = get_tick();
-    uint8_t kb_rows = 0, kb_col = 0;
+    uint8_t kp_rows = 0, kp_col = 0;
     
     // Check KB interaction
-    kb_col = keypad_tick_counter & 0x03;
-    kb_selectColumn(kb_col);
-    kb_rows = kb_readRows();
-	if(((kb_rows ^ ~kb_stat[kb_col]) & ~kb_rows) & 0x0F) spkr_beep(0x80, 1); // Beep if we detect a new key
-	kb_stat[kb_col] = ~kb_rows & 0x0F;
-	kb_selectColumn(5); // This will disable every column
+    kp_col = keypad_tick_counter & 0x03;
+    kp_selectColumn(kp_col);
+    kp_rows = kp_readRows();
+	if(((kp_rows ^ ~kp_stat[kp_col]) & ~kp_rows) & 0x0F) spkr_beep(0x80, 1); // Beep if we detect a new key
+	kp_stat[kp_col] = ~kp_rows & 0x0F;
+	kp_selectColumn(5); // This will disable every column
 		    
-    // Time to read the keypresses
-    if(!kb_col) {
-    
-        //if(KP_A(kb_stat, kb_stat_buf)) spkr_beep(0x80, 20);
-    
-        // Update the buffer
-        kb_stat_buf[0] = kb_stat[0];
-        kb_stat_buf[1] = kb_stat[1];
-        kb_stat_buf[2] = kb_stat[2];
-        kb_stat_buf[3] = kb_stat[3];
-    }
-    
-    refresh_state();
+    // Time to refresh state and read the keypresses
+    if(!kp_col) refresh_state();
 		    
     keypad_tick_counter++;
 }
 
 static void refresh_state(void) {
+    uint32_t now = get_tick();
+
+
     switch(sm_state) {
-        KP_DEFAULT:
+        case KP_MREAD:
+            state_mread(now);
+            //if((now - sm_state_time) >= DEFAULT_STATE_TIMEOUT) { sm_state = KP_DEFAULT; spkr_beep(0x30, 20); };
+            break;
+        case KP_DEFAULT:
         default:
             state_default();
+            if(KP_1(kp_stat, kp_stat_buf)) { // Enter memory read mode
+                sm_state = KP_MREAD;
+                s_val16[0] = 0;
+                disp_clear();
+                sm_state_time = now; 
+            }
             break;
     }
+    
+    // Update the keypad buffer
+    kp_stat_buf[0] = kp_stat[0];
+    kp_stat_buf[1] = kp_stat[1];
+    kp_stat_buf[2] = kp_stat[2];
+    kp_stat_buf[3] = kp_stat[3];
 }
 
 static void format_rtc_short(rtc_stat *clk, char *buf) {
@@ -105,6 +120,21 @@ static void format_rtc_short(rtc_stat *clk, char *buf) {
 }
 
 /***/
+
+static void state_mread(uint32_t now) {
+    sprintf(disp_buffer, "MR @%04X  %02X", s_val16[0], *(uint8_t*)s_val16[0]);
+    disp_print(disp_buffer);
+    
+    if(KP_E(kp_stat, kp_stat_buf)) { s_val16[0] -= 0x01; sm_state_time = now; }
+    else if(KP_F(kp_stat, kp_stat_buf)) { s_val16[0] += 0x01; sm_state_time = now; }
+    else if(KP_7(kp_stat, kp_stat_buf)) { s_val16[0] -= 0x10; sm_state_time = now; }
+    else if(KP_9(kp_stat, kp_stat_buf)) { s_val16[0] += 0x10; sm_state_time = now; }
+    else if(KP_4(kp_stat, kp_stat_buf)) { s_val16[0] -= 0x100; sm_state_time = now; }
+    else if(KP_6(kp_stat, kp_stat_buf)) { s_val16[0] += 0x100; sm_state_time = now; }
+    else if(KP_1(kp_stat, kp_stat_buf)) { s_val16[0] -= 0x1000; sm_state_time = now; }
+    else if(KP_3(kp_stat, kp_stat_buf)) { s_val16[0] += 0x1000; sm_state_time = now; }  
+    else if(KP_D(kp_stat, kp_stat_buf)) { sm_state = KP_DEFAULT; spkr_beep(0x30, 20); }
+}
 
 static void state_default(void) {
     // Update clock on display

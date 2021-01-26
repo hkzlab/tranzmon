@@ -58,12 +58,12 @@ void disp_send_byte(uint8_t data) {
     } while(bits--);
 }
 
-void kb_selectColumn(uint8_t col) {
+void kp_selectColumn(uint8_t col) {
     uint8_t val = PIO_PortA & 0xF0;
     PIO_PortA = val | (~(0x01 << col) & 0x0F);
 }
 
-uint8_t kb_readRows(void) {
+uint8_t kp_readRows(void) {
     return PIO_PortB & 0x0F;
 }
 
