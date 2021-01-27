@@ -59,7 +59,7 @@ static keypad_sm_state sm_state;
 static uint32_t sm_state_time;
 
 static uint16_t s_val16[1];
-static uint16_t s_val8[2];
+static uint8_t s_val8[5];
 
 static uint8_t read_btn(void);
 static void format_rtc_short(rtc_stat *clk, char *buf);
@@ -67,6 +67,7 @@ static void refresh_state(void);
 
 static void state_mread(uint32_t now);
 static void state_mwrite(uint32_t now);
+static void state_clock(uint32_t now);
 static void state_default(void);
 
 void keypad_init(void) {
@@ -102,6 +103,7 @@ static void refresh_state(void) {
     switch(sm_state) {
         case KP_CLOCK_DMYW:
         case KP_CLOCK_HMS:
+            state_clock(now);
             if((now - sm_state_time) >= DEFAULT_STATE_TIMEOUT) { sm_state = KP_DEFAULT; spkr_beep(0x30, 20); };
             break;
         case KP_JMP:
@@ -129,6 +131,7 @@ static void refresh_state(void) {
                 disp_clear();
                 sm_state_time = now; 
             } else if(KP_0(kp_stat, kp_stat_buf)) { // Enter clock set mode
+                memset(s_val8, 0, 5);
                 sm_state = KP_CLOCK_DMYW;
                 disp_clear();
                 sm_state_time = now;             
@@ -171,6 +174,60 @@ static void format_rtc_short(rtc_stat *clk, char *buf) {
 }
 
 /***/
+
+static void state_clock(uint32_t now) {
+    char clkchr[7] = {'_', '_', '_', '_', '_', '_', '_'};
+    uint8_t btn = read_btn();
+
+    if(btn != 0xFF) sm_state_time = now;
+
+    if(s_val8[0] > 0) clkchr[0] = nibble_to_hex(s_val8[1] >> 4);
+    if(s_val8[0] > 1) clkchr[1] = nibble_to_hex(s_val8[1] >> 0);
+    if(s_val8[0] > 2) clkchr[2] = nibble_to_hex(s_val8[2] >> 4);
+    if(s_val8[0] > 3) clkchr[3] = nibble_to_hex(s_val8[2] >> 0);
+    if(s_val8[0] > 4) clkchr[4] = nibble_to_hex(s_val8[3] >> 4);
+    if(s_val8[0] > 5) clkchr[5] = nibble_to_hex(s_val8[3] >> 0);
+    if(s_val8[0] > 6) clkchr[6] = nibble_to_hex(s_val8[4] >> 4);
+    
+    if(sm_state == KP_CLOCK_DMYW) {
+        sprintf(disp_buffer, "DATE %c%c/%c%c/%c%c %c", clkchr[0], clkchr[1], clkchr[2], clkchr[3], clkchr[4], clkchr[5], clkchr[6]);
+        disp_print(disp_buffer);
+        
+        if(s_val8[0] > 6) {
+            clk.d = s_val8[1];
+            clk.M = s_val8[2];
+            clk.y = s_val8[3];
+            clk.dow = s_val8[4];
+        
+            memset(s_val8, 0, 5);
+            sm_state = KP_CLOCK_HMS;
+            
+            delay_ms_ctc(200);
+            spkr_beep(0x50, 50);
+            return;
+        }
+        
+        if(btn <= 9) { s_val8[1 + (s_val8[0]/2)] |= btn << (4 - (4 * (s_val8[0]%2)));  s_val8[0]++; }
+    } else {
+        sprintf(disp_buffer, "HOUR %c%c:%c%c:%c%c  ", clkchr[0], clkchr[1], clkchr[2], clkchr[3], clkchr[4], clkchr[5]);
+        disp_print(disp_buffer);
+        
+        if(s_val8[0] > 5) {
+            clk.h = s_val8[1];
+            clk.m = s_val8[2];
+            clk.s = s_val8[3];
+        
+        	rtc_set(&clk);
+        
+            sm_state = KP_DEFAULT;
+            delay_ms_ctc(500);
+            spkr_beep(0x30, 100);
+            return;
+        }
+        
+        if(btn <= 9) { s_val8[1 + (s_val8[0]/2)] |= btn << (4 - (4 * (s_val8[0]%2)));  s_val8[0]++; }
+    }
+}
 
 static void state_mwrite(uint32_t now) {
     char nibA = '_';
