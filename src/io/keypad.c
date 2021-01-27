@@ -50,7 +50,7 @@ typedef enum {
     KP_CLOCK_HMS
 } keypad_sm_state;
 
-static char disp_buffer[DISP_SIZE + 1];
+static char disp_buffer[DISP_SIZE + 8]; // Leave some additional space for the null character and the '.', which the display condenses in the previous char
 
 static uint8_t kp_stat[4], kp_stat_buf[4];
 static rtc_stat clk;
@@ -170,7 +170,7 @@ static uint8_t read_btn(void) {
 }
 
 static void format_rtc_short(rtc_stat *clk, char *buf) {
-    sprintf(buf, "%02X/%02X/%02X  %02X:%02X ", clk->d, clk->M, clk->y, clk->h, clk->m);
+    sprintf(buf, "%02X.%02X.%02X %s %02X.%02X.%02X", clk->d, clk->M, clk->y, rtc_dowName(clk->dow, 1), clk->h, clk->m, clk->s);
 }
 
 /***/
@@ -197,7 +197,7 @@ static void state_clock(uint32_t now) {
             clk.d = s_val8[1];
             clk.M = s_val8[2];
             clk.y = s_val8[3];
-            clk.dow = s_val8[4];
+            clk.dow = s_val8[4] >> 4;
         
             memset(s_val8, 0, 5);
             sm_state = KP_CLOCK_HMS;
@@ -209,7 +209,7 @@ static void state_clock(uint32_t now) {
         
         if(btn <= 9) { s_val8[1 + (s_val8[0]/2)] |= btn << (4 - (4 * (s_val8[0]%2)));  s_val8[0]++; }
     } else {
-        sprintf(disp_buffer, "HOUR %c%c:%c%c:%c%c  ", clkchr[0], clkchr[1], clkchr[2], clkchr[3], clkchr[4], clkchr[5]);
+        sprintf(disp_buffer, "HOUR %c%c.%c%c.%c%c    ", clkchr[0], clkchr[1], clkchr[2], clkchr[3], clkchr[4], clkchr[5]);
         disp_print(disp_buffer);
         
         if(s_val8[0] > 5) {
@@ -276,7 +276,7 @@ static void state_mread(uint32_t now) {
 
 static void state_default(void) {
     // Update clock on display
-    if(!(keypad_tick_counter & 0x3FF)) {
+    if(!(keypad_tick_counter & 0xFF)) {
         rtc_get(&clk);
         format_rtc_short(&clk, disp_buffer);
         disp_print(disp_buffer);

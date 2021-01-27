@@ -13,7 +13,7 @@ void disp_clear(void) {
 
 void disp_print(char *str) {
     disp_send_byte(DISP_BUFFER_POINTER | 0x0F);
-    for(uint8_t counter = 0; str[counter] && (counter < DISP_SIZE); counter++) {
+    for(uint8_t counter = 0; str[counter]; counter++) {
         disp_send_byte((str[counter] >= 0x61 && str[counter] <= 0x7A) ? (str[counter] - 0x20) : str[counter]); // Make all letters uppercase!
     }
 }
