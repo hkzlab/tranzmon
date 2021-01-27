@@ -45,7 +45,9 @@ typedef enum {
     KP_DEFAULT,
     KP_MREAD,
     KP_MWRITE,
-    KP_JMP
+    KP_JMP,
+    KP_CLOCK_DMYW,
+    KP_CLOCK_HMS
 } keypad_sm_state;
 
 static char disp_buffer[DISP_SIZE + 1];
@@ -98,6 +100,10 @@ static void refresh_state(void) {
     uint32_t now = get_tick();
 
     switch(sm_state) {
+        case KP_CLOCK_DMYW:
+        case KP_CLOCK_HMS:
+            if((now - sm_state_time) >= DEFAULT_STATE_TIMEOUT) { sm_state = KP_DEFAULT; spkr_beep(0x30, 20); };
+            break;
         case KP_JMP:
             disp_clear();
             sprintf(disp_buffer, "JUMPING @%04X", s_val16[0]);
@@ -122,6 +128,10 @@ static void refresh_state(void) {
                 s_val16[0] = 0;
                 disp_clear();
                 sm_state_time = now; 
+            } else if(KP_0(kp_stat, kp_stat_buf)) { // Enter clock set mode
+                sm_state = KP_CLOCK_DMYW;
+                disp_clear();
+                sm_state_time = now;             
             }
             break;
     }
