@@ -58,6 +58,7 @@ $(BIN_DIR)/$(TARGET).ihx:	$(BIN_DIR)/crt0.rel $(BIN_DIR)/main.rel \
 							$(BIN_DIR)/utilities.rel \
 							$(BIN_DIR)/console.rel \
 						    $(BIN_DIR)/xmodem.rel \
+						    $(BIN_DIR)/modem.rel \
 						    $(BIN_DIR)/display.rel \
 						    $(BIN_DIR)/keypad.rel \
 						    $(BIN_DIR)/rtc.rel
@@ -68,6 +69,7 @@ $(BIN_DIR)/$(TARGET).ihx:	$(BIN_DIR)/crt0.rel $(BIN_DIR)/main.rel \
 		$(BIN_DIR)/utilities.rel \
 	    $(BIN_DIR)/console.rel \
 	    $(BIN_DIR)/xmodem.rel \
+	    $(BIN_DIR)/modem.rel \
 	    $(BIN_DIR)/display.rel \
 	    $(BIN_DIR)/keypad.rel \
 	    $(BIN_DIR)/rtc.rel \
@@ -105,6 +107,9 @@ $(BIN_DIR)/keypad.rel: $(SRC_DIR)/io/keypad.c
 	
 $(BIN_DIR)/xmodem.rel: $(SRC_DIR)/io/xmodem.c
 	$(CCC) $(CCC_FLAGS) -c -o $(BIN_DIR) $(SRC_DIR)/io/xmodem.c
+	
+$(BIN_DIR)/modem.rel: $(SRC_DIR)/hardware/modem.c
+	$(CCC) $(CCC_FLAGS) -c -o $(BIN_DIR) $(SRC_DIR)/hardware/modem.c
 
 clean:
 	rm $(BIN_DIR)/*
