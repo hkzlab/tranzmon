@@ -21,6 +21,7 @@
 
 #define DEFAULT_STATE_TIMEOUT 10000
 
+#define FORMAT_ARRAY_SIZE 7
 #define STATE_VARARR_SIZE 5
 #define KP_COLUMNS 4
 
@@ -50,11 +51,13 @@ typedef enum {
     KP_MWRITE,
     KP_JMP,
     KP_OPORT,
+    KP_IPORT,
     KP_CLOCK_DMYW,
     KP_CLOCK_HMS
 } keypad_sm_state;
 
 static char disp_buffer[DISP_SIZE + 8]; // Leave some additional space for the null character and the '.', which the display condenses in the previous char
+static char format_array[FORMAT_ARRAY_SIZE];
 
 static uint8_t kp_stat[KP_COLUMNS], kp_stat_buf[KP_COLUMNS];
 static rtc_stat clk;
@@ -74,6 +77,7 @@ static void state_mread(uint32_t now);
 static void state_mwrite(uint32_t now);
 static void state_clock(uint32_t now);
 static void state_oport(uint32_t now);
+static void state_iport(uint32_t now);
 static void state_default(void);
 
 void keypad_init(void) {
@@ -107,6 +111,10 @@ static void refresh_state(void) {
     uint32_t now = get_tick();
 
     switch(sm_state) {
+        case KP_IPORT:
+            state_iport(now);
+            if((now - sm_state_time) >= DEFAULT_STATE_TIMEOUT) { sm_state = KP_DEFAULT; spkr_beep(0x30, 20); };           
+            break;
         case KP_OPORT:
             state_oport(now);
             if((now - sm_state_time) >= DEFAULT_STATE_TIMEOUT) { sm_state = KP_DEFAULT; spkr_beep(0x30, 20); };           
@@ -140,6 +148,11 @@ static void refresh_state(void) {
                 clear_vars();
                 disp_clear();
                 sm_state_time = now; 
+            } else if(KP_2(kp_stat, kp_stat_buf)) { // Input port mode
+                sm_state = KP_IPORT;
+                clear_vars();
+                disp_clear();
+                sm_state_time = now; 
             } else if(KP_3(kp_stat, kp_stat_buf)) { // Output port mode
                 sm_state = KP_OPORT;
                 clear_vars();
@@ -162,26 +175,24 @@ static void refresh_state(void) {
 }
 
 static uint8_t read_btn(void) {
-    uint8_t btn = 0xFF;
+    if(KP_0(kp_stat, kp_stat_buf)) return 0x00;
+    else if(KP_1(kp_stat, kp_stat_buf)) return 0x01;
+    else if(KP_2(kp_stat, kp_stat_buf)) return 0x02;
+    else if(KP_3(kp_stat, kp_stat_buf)) return 0x03;    
+    else if(KP_4(kp_stat, kp_stat_buf)) return 0x04;
+    else if(KP_5(kp_stat, kp_stat_buf)) return 0x05;
+    else if(KP_6(kp_stat, kp_stat_buf)) return 0x06;
+    else if(KP_7(kp_stat, kp_stat_buf)) return 0x07;
+    else if(KP_8(kp_stat, kp_stat_buf)) return 0x08;
+    else if(KP_9(kp_stat, kp_stat_buf)) return 0x09;
+    else if(KP_A(kp_stat, kp_stat_buf)) return 0x0A;
+    else if(KP_B(kp_stat, kp_stat_buf)) return 0x0B;
+    else if(KP_C(kp_stat, kp_stat_buf)) return 0x0C;
+    else if(KP_D(kp_stat, kp_stat_buf)) return 0x0D;
+    else if(KP_E(kp_stat, kp_stat_buf)) return 0x0E;
+    else if(KP_F(kp_stat, kp_stat_buf)) return 0x0F;
     
-    if(KP_0(kp_stat, kp_stat_buf)) btn = 0x00;
-    else if(KP_1(kp_stat, kp_stat_buf)) btn = 0x01;
-    else if(KP_2(kp_stat, kp_stat_buf)) btn = 0x02;
-    else if(KP_3(kp_stat, kp_stat_buf)) btn = 0x03;    
-    else if(KP_4(kp_stat, kp_stat_buf)) btn = 0x04;
-    else if(KP_5(kp_stat, kp_stat_buf)) btn = 0x05;
-    else if(KP_6(kp_stat, kp_stat_buf)) btn = 0x06;
-    else if(KP_7(kp_stat, kp_stat_buf)) btn = 0x07;
-    else if(KP_8(kp_stat, kp_stat_buf)) btn = 0x08;
-    else if(KP_9(kp_stat, kp_stat_buf)) btn = 0x09;
-    else if(KP_A(kp_stat, kp_stat_buf)) btn = 0x0A;
-    else if(KP_B(kp_stat, kp_stat_buf)) btn = 0x0B;
-    else if(KP_C(kp_stat, kp_stat_buf)) btn = 0x0C;
-    else if(KP_D(kp_stat, kp_stat_buf)) btn = 0x0D;
-    else if(KP_E(kp_stat, kp_stat_buf)) btn = 0x0E;
-    else if(KP_F(kp_stat, kp_stat_buf)) btn = 0x0F;
-    
-    return btn;
+    return 0xFF;
 }
 
 static void format_rtc_short(rtc_stat *clk, char *buf) {
@@ -197,21 +208,21 @@ static void clear_vars(void) {
 /***/
 
 static void state_clock(uint32_t now) {
-    char clkchr[7] = {'_', '_', '_', '_', '_', '_', '_'};
+    memset(format_array, '_', 7);
     uint8_t btn = read_btn();
 
     if(btn != 0xFF) sm_state_time = now;
 
-    if(s_val8[0] > 0) clkchr[0] = nibble_to_hex(s_val8[1] >> 4);
-    if(s_val8[0] > 1) clkchr[1] = nibble_to_hex(s_val8[1] >> 0);
-    if(s_val8[0] > 2) clkchr[2] = nibble_to_hex(s_val8[2] >> 4);
-    if(s_val8[0] > 3) clkchr[3] = nibble_to_hex(s_val8[2] >> 0);
-    if(s_val8[0] > 4) clkchr[4] = nibble_to_hex(s_val8[3] >> 4);
-    if(s_val8[0] > 5) clkchr[5] = nibble_to_hex(s_val8[3] >> 0);
-    if(s_val8[0] > 6) clkchr[6] = nibble_to_hex(s_val8[4] >> 4);
+    if(s_val8[0] > 0) format_array[0] = nibble_to_hex(s_val8[1] >> 4);
+    if(s_val8[0] > 1) format_array[1] = nibble_to_hex(s_val8[1] >> 0);
+    if(s_val8[0] > 2) format_array[2] = nibble_to_hex(s_val8[2] >> 4);
+    if(s_val8[0] > 3) format_array[3] = nibble_to_hex(s_val8[2] >> 0);
+    if(s_val8[0] > 4) format_array[4] = nibble_to_hex(s_val8[3] >> 4);
+    if(s_val8[0] > 5) format_array[5] = nibble_to_hex(s_val8[3] >> 0);
+    if(s_val8[0] > 6) format_array[6] = nibble_to_hex(s_val8[4] >> 4);
     
     if(sm_state == KP_CLOCK_DMYW) {
-        sprintf(disp_buffer, "DATE %c%c/%c%c/%c%c %c", clkchr[0], clkchr[1], clkchr[2], clkchr[3], clkchr[4], clkchr[5], clkchr[6]);
+        sprintf(disp_buffer, "DATE %c%c/%c%c/%c%c %c", format_array[0], format_array[1], format_array[2], format_array[3], format_array[4], format_array[5], format_array[6]);
         disp_print(disp_buffer);
         
         if(s_val8[0] > 6) {
@@ -230,7 +241,7 @@ static void state_clock(uint32_t now) {
         
         if(btn <= 9) { s_val8[1 + (s_val8[0]/2)] |= btn << (4 - (4 * (s_val8[0]%2)));  s_val8[0]++; }
     } else {
-        sprintf(disp_buffer, "HOUR %c%c.%c%c.%c%c    ", clkchr[0], clkchr[1], clkchr[2], clkchr[3], clkchr[4], clkchr[5]);
+        sprintf(disp_buffer, "HOUR %c%c.%c%c.%c%c    ", format_array[0], format_array[1], format_array[2], format_array[3], format_array[4], format_array[5]);
         disp_print(disp_buffer);
         
         if(s_val8[0] > 5) {
@@ -246,19 +257,21 @@ static void state_clock(uint32_t now) {
             return;
         }
         
-        if(btn <= 9) { s_val8[1 + (s_val8[0]/2)] |= btn << (4 - (4 * (s_val8[0]%2)));  s_val8[0]++; }
+        if((btn <= 9) && (s_val8[0] <= 5)) { 
+            s_val8[1 + (s_val8[0]/2)] |= btn << (4 - (4 * (s_val8[0]%2)));
+            s_val8[0]++; 
+        }
     }
 }
 
 static void state_mwrite(uint32_t now) {
-    char nibA = '_';
-    char nibB = '_';
+    format_array[0] = format_array[1] = '_';
     uint8_t btn;
 
-    if(s_val8[0] > 0) nibA = nibble_to_hex(s_val8[1] >> 4);
-    if(s_val8[0] > 1) nibB = nibble_to_hex(s_val8[1]);
+    if(s_val8[0] > 0) format_array[0] = nibble_to_hex(s_val8[1] >> 4);
+    if(s_val8[0] > 1) format_array[1] = nibble_to_hex(s_val8[1]);
 
-    sprintf(disp_buffer, "MW @%04X  %c%c", s_val16[0], nibA, nibB);
+    sprintf(disp_buffer, "MW @%04X  %c%c", s_val16[0], format_array[0], format_array[1]);
     disp_print(disp_buffer);    
     
     if(s_val8[0] > 1) {
@@ -305,28 +318,64 @@ static void state_default(void) {
 }
 
 static void state_oport(uint32_t now) {
-    char oportchr[4] = {'_', '_', '_', '_'};
-    uint8_t btn = read_btn();
-
-    if(btn != 0xFF) sm_state_time = now;
+    uint8_t btn;
+    memset(format_array, '_', 4);
     
-    if(s_val8[0] > 0) oportchr[0] = nibble_to_hex(s_val8[1] >> 4);
-    if(s_val8[0] > 1) oportchr[1] = nibble_to_hex(s_val8[1] >> 0);
-    if(s_val8[0] > 2) oportchr[2] = nibble_to_hex(s_val8[2] >> 4);
-    if(s_val8[0] > 3) oportchr[3] = nibble_to_hex(s_val8[2] >> 0);
+    if(s_val8[0] > 0) format_array[0] = nibble_to_hex(s_val8[1] >> 4);
+    if(s_val8[0] > 1) format_array[1] = nibble_to_hex(s_val8[1] >> 0);
+    if(s_val8[0] > 2) format_array[2] = nibble_to_hex(s_val8[2] >> 4);
+    if(s_val8[0] > 3) format_array[3] = nibble_to_hex(s_val8[2] >> 0);
 
-    sprintf(disp_buffer, "OUT P.%c%c V.%c%c", oportchr[0], oportchr[1], oportchr[2], oportchr[3]);
+    sprintf(disp_buffer, "OUT P.%c%c V.%c%c", format_array[0], format_array[1], format_array[2], format_array[3]);
     disp_print(disp_buffer);
     
     if(s_val8[0] > 3) {
         sm_state = KP_DEFAULT;
-        delay_ms_ctc(800);
+        delay_ms_ctc(1000);
         spkr_beep(0x30, 100);
         monitor_outp(s_val8[1], s_val8[2]);
         return;
     }
     
-    if(btn < 0xFF) { s_val8[1 + (s_val8[0]/2)] |= btn << (4 - (4 * (s_val8[0]%2)));  s_val8[0]++; }
+    btn = read_btn();
+    if((btn != 0xFF) && (s_val8[0] <= 3)) { 
+        sm_state_time = now; 
+        s_val8[1 + (s_val8[0]/2)] |= (btn << (4 - (4 * (s_val8[0]%2))));
+        s_val8[0]++;
+    }
+}
+
+static void state_iport(uint32_t now) {
+    uint8_t btn;
+    format_array[0] = format_array[1] = '_';
+    format_array[2] = format_array[3] = '*';
+    
+    if(s_val8[0] > 0) format_array[0] = nibble_to_hex(s_val8[1] >> 4);
+    if(s_val8[0] > 1) format_array[1] = nibble_to_hex(s_val8[1] >> 0);
+    if(s_val8[0] > 2) {
+        format_array[2] = nibble_to_hex(s_val8[2] >> 4);
+        format_array[3] = nibble_to_hex(s_val8[2] >> 0);
+    }
+
+    sprintf(disp_buffer, "IN  P.%c%c V.%c%c", format_array[0], format_array[1], format_array[2], format_array[3]);
+    disp_print(disp_buffer);
+    
+    if(s_val8[0] == 2) {
+        s_val8[2] = monitor_inp(s_val8[1]);
+        s_val8[0]++;
+    } else if(s_val8[0] > 2) {
+        sm_state = KP_DEFAULT;
+        delay_ms_ctc(2000);
+        spkr_beep(0x30, 100);
+        return;
+    }
+    
+    btn = read_btn();
+    if((btn != 0xFF) && (s_val8[0] <= 1)) {
+        sm_state_time = now; 
+        s_val8[1 + (s_val8[0]/2)] |= (btn << (4 - (4 * (s_val8[0]%2))));
+        s_val8[0]++; 
+    }
 }
 
 
