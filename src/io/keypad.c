@@ -262,6 +262,11 @@ static void state_clock(uint32_t now) {
             s_val8[0]++; 
         }
     }
+    
+    if(btn == 0x0D) { // Cancel and back
+            sm_state = KP_DEFAULT;
+            spkr_beep(0x30, 20);
+    }
 }
 
 static void state_mwrite(uint32_t now) {
