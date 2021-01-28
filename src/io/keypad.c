@@ -315,7 +315,7 @@ static void state_oport(uint32_t now) {
     if(s_val8[0] > 2) oportchr[2] = nibble_to_hex(s_val8[2] >> 4);
     if(s_val8[0] > 3) oportchr[3] = nibble_to_hex(s_val8[2] >> 0);
 
-    sprintf(disp_buffer, "OPORT %c%c - %c%c", oportchr[0], oportchr[1], oportchr[2], oportchr[3]);
+    sprintf(disp_buffer, "OUT P.%c%c V.%c%c", oportchr[0], oportchr[1], oportchr[2], oportchr[3]);
     disp_print(disp_buffer);
     
     if(s_val8[0] > 3) {
