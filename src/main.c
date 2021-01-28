@@ -8,6 +8,7 @@
 #include <hardware/dart.h>
 #include <hardware/rtc.h>
 #include <hardware/display.h>
+#include <hardware/modem.h>
 
 #include <io/console.h>
 #include <io/xmodem.h>
@@ -49,6 +50,7 @@ static void sys_init(void) {
 	clk_ser_init();
 	tick_init();
 	dart_init();
+	modem_init();
 	spkr_init();
 	keypad_init();
 	

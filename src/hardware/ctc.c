@@ -45,13 +45,13 @@ void clk_ser_init(void) {
     // Program the interrupt vector
     CTC_Chan0 = 0x18;
 
-    // Initialize clock for serial 1
+    // Initialize clock for serial 1 (modem)
     CTC_Chan0 = 0x45; // Control word, interrupt, continued operation, followed by time constant, automatic trigger, falling edge, counter mode, no interrupts
-    CTC_Chan0 = 0x06; // time constant
+    CTC_Chan0 = 0x5D; // time constant, 1200bps
     
-    // The same for the second serial port
+    // The same for the second serial port (external RS232)
     CTC_Chan1 = 0x45;
-    CTC_Chan1 = 0x06; // time constant
+    CTC_Chan1 = 0x06; // time constant, 19200bps
 }
 
 uint32_t get_tick(void) {
