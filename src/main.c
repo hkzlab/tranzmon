@@ -327,7 +327,7 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 /*** Monitor Commands ***/
 
 static void print_rtc(rtc_stat *clk) {
-    printf("\n\r%02X/%02X/%02X %02X:%02X:%02X (%s)\n\r", clk->d, clk->M, clk->y, clk->h, clk->m, clk->s, rtc_dowName(clk->dow, 0));
+    printf("\n\r%02X/%02X/%02X %02X:%02X:%02X (%s)\n\r", clk->d, clk->M, clk->y, clk->h, clk->m, clk->s, rtc_dowName(clk->dow));
 }
 
 static void monitor_read(uint16_t address, uint8_t blocks) {

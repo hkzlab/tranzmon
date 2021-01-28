@@ -18,6 +18,6 @@ typedef struct {
 void rtc_init(void);
 void rtc_set(rtc_stat *cs);
 void rtc_get(rtc_stat *cs);
-char *rtc_dowName(uint8_t dow, uint8_t s);
+char *rtc_dowName(uint8_t dow);
 
 #endif /* _RTC_HEADER_ */

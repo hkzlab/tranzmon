@@ -170,7 +170,8 @@ static uint8_t read_btn(void) {
 }
 
 static void format_rtc_short(rtc_stat *clk, char *buf) {
-    sprintf(buf, "%02X.%02X.%02X %s %02X.%02X.%02X", clk->d, clk->M, clk->y, rtc_dowName(clk->dow, 1), clk->h, clk->m, clk->s);
+    char *dow = rtc_dowName(clk->dow);
+    sprintf(buf, "%02X.%02X.%02X %02X.%02X %c%c%c", clk->d, clk->M, clk->y, clk->h, clk->m, dow[0], dow[1], dow[2]);
 }
 
 /***/
@@ -276,7 +277,7 @@ static void state_mread(uint32_t now) {
 
 static void state_default(void) {
     // Update clock on display
-    if(!(keypad_tick_counter & 0xFF)) {
+    if(!(keypad_tick_counter & 0x4FF)) {
         rtc_get(&clk);
         format_rtc_short(&clk, disp_buffer);
         disp_print(disp_buffer);

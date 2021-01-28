@@ -12,16 +12,6 @@ static char dow_names[7][10] = {
     "Saturday"
 };
 
-static char sdow_names[7][4] = {
-    "SU",
-    "MO",
-    "TU",
-    "WE",
-    "TH",
-    "FR",
-    "SA"
-};
-
 static __sfr __at (RTC_BASE+0x00) CLK_Reg_0;
 static __sfr __at (RTC_BASE+0x01) CLK_Reg_1;
 static __sfr __at (RTC_BASE+0x02) CLK_Reg_2;
@@ -192,7 +182,7 @@ void rtc_set(rtc_stat *cs) {
     write_rtc_reg(0x0C, cs->dow & 0x07);
 }
 
-char *rtc_dowName(uint8_t dow, uint8_t s) {
-    return (s ? sdow_names[dow%7] : dow_names[dow % 7]);
+char *rtc_dowName(uint8_t dow) {
+    return dow_names[dow%7];
 }
 
