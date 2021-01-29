@@ -336,8 +336,8 @@ static void state_oport(uint32_t now) {
     
     if(s_val8[0] > 3) {
         sm_state = KP_DEFAULT;
-        delay_ms_ctc(1000);
         spkr_beep(0x30, 100);
+        delay_ms_ctc(1000);
         monitor_outp(s_val8[1], s_val8[2]);
         return;
     }
@@ -370,8 +370,8 @@ static void state_iport(uint32_t now) {
         s_val8[0]++;
     } else if(s_val8[0] > 2) {
         sm_state = KP_DEFAULT;
-        delay_ms_ctc(2000);
         spkr_beep(0x30, 100);
+        delay_ms_ctc(2000);
         return;
     }
     
