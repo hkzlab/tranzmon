@@ -104,6 +104,7 @@ static uint8_t xmodem_receive_sync(uint8_t tries) {
     return 0;
 }
 
+
 static uint8_t xmodem_check_packet(void) {
     uint16_t crc = crc_calc(&packet_buf[XMODEM_DATA_OFFSET], XMODEM_DATA_SIZE);
     uint16_t calc_crc = ((uint16_t)packet_buf[131]) << 8 | packet_buf[132];

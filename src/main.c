@@ -183,10 +183,14 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 		    address = monitor_parseU16(&cmd[2]);
 		    length = monitor_parseU16(&cmd[7]);
 		    
+		    disp_clear();
+		    disp_print("XMODEM UPLOAD");
 		    printf("\n\rXMODEM upload %04X bytes from %04X\n\r", length, address);
-		   
+
 			if(!xmodem_upload((uint8_t*)address, length)) console_printString("\n\rUpload failed!\n\r");
 			else console_printString("\n\rUpload completed.\n\r");
+			
+	        disp_clear();
 	        
 	        break;
 		case 'X': // XModem download
@@ -205,11 +209,16 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 		        printf("\n\rDownloads are allowed only after %04X\n\r", FREE_RAM_START);
 		        return;
 		    }
-		    
+		   
+		   	disp_clear();
+		    disp_print("XMODEM DOWNLOAD");
 		    printf("\n\rXMODEM download @%04X\n\r", address);
 		   
 			if(!xmodem_receive((uint8_t*)address)) console_printString("\n\rDownload failed!\n\r");
 			else console_printString("\n\rDownload completed.\n\r");
+			
+			disp_clear();
+			
 			break;
 		case 'I': // IN
 		    if(idx > 4) {
