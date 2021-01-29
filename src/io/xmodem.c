@@ -26,10 +26,10 @@
 
 static uint8_t packet_buf[XMODEM_PKT_SIZE];
 
-static uint8_t xmodem_sync(uint8_t tries);
+static uint8_t xmodem_receive_sync(uint8_t tries);
 static uint8_t xmodem_recv_pkt(void);
 static uint8_t xmodem_check_packet(void);
-static void xmodem_upload_packet(uint8_t *ptr);
+static void xmodem_packet2ram(uint8_t *ptr);
 static uint16_t crc_calc(uint8_t *ptr, int16_t count);
 
 uint8_t xmodem_receive(uint8_t* dest) {
@@ -40,7 +40,7 @@ uint8_t xmodem_receive(uint8_t* dest) {
     uint32_t now = 0;
     uint8_t last_pkt_num = 0xFF; // As we start from 0, this should be different from the first we get
 
-    if(!xmodem_sync(XMODEM_DEFAULT_TRIES)) return 0; // No SYNC, time to exit
+    if(!xmodem_receive_sync(XMODEM_DEFAULT_TRIES)) return 0; // No SYNC, time to exit
 
     while(nack_retries) {
         if(xmodem_recv_pkt()) {
@@ -61,7 +61,7 @@ uint8_t xmodem_receive(uint8_t* dest) {
                                 return 0; // Immediate failure, we wrapped around the memory
                             }
                         
-                            xmodem_upload_packet(pkt_dest);
+                            xmodem_packet2ram(pkt_dest);
                             pkt_dest += XMODEM_DATA_SIZE;
                             last_pkt_num = packet_buf[1] & 0xFF;
                         }
@@ -85,7 +85,11 @@ uint8_t xmodem_receive(uint8_t* dest) {
     return 0;
 }
 
-static uint8_t xmodem_sync(uint8_t tries) {
+uint8_t xmodem_upload(uint8_t* source, uint16_t len) {
+    return 0;
+}
+
+static uint8_t xmodem_receive_sync(uint8_t tries) {
     uint32_t now;
 
     while(tries--) {
@@ -133,7 +137,7 @@ static uint8_t xmodem_recv_pkt(void) {
     return 1;
 }
 
-static void xmodem_upload_packet(uint8_t *ptr) {
+static void xmodem_packet2ram(uint8_t *ptr) {
     for(uint8_t idx = 0; idx < XMODEM_DATA_SIZE; idx++) ptr[idx] = packet_buf[idx];
 }
 

@@ -132,7 +132,7 @@ void main(void) {
 
 static void monitor_parse_command(char *cmd, uint8_t idx) {
 	uint8_t val, port, qty;
-	uint16_t address;
+	uint16_t address, length;
 
 	if (!idx) return; // Nothing to execute
 
@@ -169,7 +169,27 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 	        rtc_get(&clk);
         	print_rtc(&clk);
 	        break;
-		case 'X': // XModem transfer
+	    case 'U': // XModem upload
+	        if(idx > 11) {
+	            console_printString(MONITOR_ERR_MSG);	            
+	            return;
+	        }
+	        
+	        if(!monitor_strIsValidHex8(&cmd[2]) || !monitor_strIsValidHex8(&cmd[4]) || !monitor_strIsValidHex8(&cmd[7]) || !monitor_strIsValidHex8(&cmd[9])) {
+		        console_printString(MONITOR_ERR_MSG);
+		        return;
+		    }
+		    
+		    address = monitor_parseU16(&cmd[2]);
+		    length = monitor_parseU16(&cmd[7]);
+		    
+		    printf("\n\rXMODEM upload %04X bytes from %04X\n\r", length, address);
+		   
+			if(!xmodem_upload((uint8_t*)address, length)) console_printString("\n\rUpload failed!\n\r");
+			else console_printString("\n\rUpload completed.\n\r");
+	        
+	        break;
+		case 'X': // XModem download
 		    if(idx > 6) {
 	            console_printString(MONITOR_ERR_MSG);
 		        return;
@@ -182,14 +202,14 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 		    
 		    address = monitor_parseU16(&cmd[2]);
 		    if(address < FREE_RAM_START) {
-		        printf("\n\rUploads are allowed only after %04X\n\r", FREE_RAM_START);
+		        printf("\n\rDownloads are allowed only after %04X\n\r", FREE_RAM_START);
 		        return;
 		    }
 		    
-		    printf("\n\rXMODEM upload @%04X\n\r", address);
+		    printf("\n\rXMODEM download @%04X\n\r", address);
 		   
-			if(!xmodem_receive((uint8_t*)address)) console_printString("\n\rUpload failed!\n\r");
-			else console_printString("\n\rUpload completed.\n\r");
+			if(!xmodem_receive((uint8_t*)address)) console_printString("\n\rDownload failed!\n\r");
+			else console_printString("\n\rDownload completed.\n\r");
 			break;
 		case 'I': // IN
 		    if(idx > 4) {
@@ -314,7 +334,8 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 	                "\n\rF xxxx yy zz     -> Fill zz bytes of RAM with yy starting @xxxx" \
 	                "\n\rW xxxx yy        -> Write zz @xxxx" \
 	                "\n\rR xxxx yy        -> Print yy 16b blocks of RAM starting @xxxx" \
-	                "\n\rX xxxx           -> Upload data via XMODEM @xxxx" \
+	                "\n\rX xxxx           -> Download data via XMODEM @xxxx" \
+	                "\n\rU xxxx yyyy      -> Upload yyyy bytes via XMODEM  from xxxx" \
 	                "\n\rT ddMMyyhhmmssdw -> Show or set current date" \
 	                "\n\r");
 	        break;
