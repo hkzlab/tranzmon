@@ -25,7 +25,6 @@
 
 static uint8_t packet_buf[XMODEM_PKT_SIZE];
 
-static uint8_t xmodem_send_sync(uint16_t timeout);
 static uint8_t xmodem_receive_sync(uint8_t tries);
 static uint8_t xmodem_recv_pkt(void);
 static uint8_t xmodem_check_packet(void);
@@ -138,7 +137,7 @@ uint8_t xmodem_upload(uint8_t* source, uint16_t len) {
                 if(dart_dataAvailable(PORT_B)) {
                     if(dart_read(PORT_B) == ACK)  {
                         dart_write(PORT_B, EOT); 
-                        delay_ms_ctc(5000);
+                        delay_ms_ctc(2000);
                         return 1;
                     } else break;
                 }
@@ -166,24 +165,6 @@ static uint8_t xmodem_receive_sync(uint8_t tries) {
 
     return 0;
 }
-
-static uint8_t xmodem_send_sync(uint16_t timeout) {
-    uint32_t now = get_tick();
-    uint8_t ch;
-    
-    while((get_tick() - now) < timeout) {
-        if(dart_dataAvailable(PORT_B)) {
-           ch = dart_read(PORT_B);
-           if(ch == SYNC) return 1;
-           else return 0; // Got something else...
-        }
-        
-        __asm nop __endasm;
-    }
-    
-    return 0;
-}
-
 
 static uint8_t xmodem_check_packet(void) {
     uint16_t crc = crc_calc(&packet_buf[XMODEM_DATA_OFFSET], XMODEM_DATA_SIZE);

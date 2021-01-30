@@ -50,6 +50,7 @@ typedef enum {
     KP_MREAD,
     KP_MWRITE,
     KP_JMP,
+    KP_DJMP,
     KP_OPORT,
     KP_IPORT,
     KP_CLOCK_DMYW,
@@ -78,6 +79,7 @@ static void state_mwrite(uint32_t now);
 static void state_clock(uint32_t now);
 static void state_oport(uint32_t now);
 static void state_iport(uint32_t now);
+static void state_djmp(uint32_t now);
 static void state_default(void);
 
 void keypad_init(void) {
@@ -111,6 +113,10 @@ static void refresh_state(void) {
     uint32_t now = get_tick();
 
     switch(sm_state) {
+        case KP_DJMP:
+            state_djmp(now);
+            if((now - sm_state_time) >= DEFAULT_STATE_TIMEOUT) { sm_state = KP_DEFAULT; spkr_beep(0x30, 20); };      
+            break;
         case KP_IPORT:
             state_iport(now);
             if((now - sm_state_time) >= DEFAULT_STATE_TIMEOUT) { sm_state = KP_DEFAULT; spkr_beep(0x30, 20); };           
@@ -158,7 +164,12 @@ static void refresh_state(void) {
                 clear_vars();
                 disp_clear();
                 sm_state_time = now; 
-            } else if(KP_4(kp_stat, kp_stat_buf)) { // Enter clock set mode
+            } else if(KP_4(kp_stat, kp_stat_buf)) { // Direct jump mode
+                clear_vars();
+                sm_state = KP_DJMP;
+                disp_clear();
+                sm_state_time = now;             
+            } else if(KP_5(kp_stat, kp_stat_buf)) { // Enter clock set mode
                 clear_vars();
                 sm_state = KP_CLOCK_DMYW;
                 disp_clear();
@@ -311,7 +322,7 @@ static void state_mread(uint32_t now) {
     else if(KP_D(kp_stat, kp_stat_buf)) { sm_state = KP_DEFAULT; spkr_beep(0x30, 20); }
     else if(KP_A(kp_stat, kp_stat_buf)) sm_state = KP_JMP;
     else if(KP_B(kp_stat, kp_stat_buf)) { sm_state = KP_MWRITE; sm_state_time = now; disp_clear(); s_val8[0] = s_val8[1] = 0; }
-}
+}static void state_djmp(uint32_t now);
 
 static void state_default(void) {
     // Update clock on display
@@ -320,6 +331,33 @@ static void state_default(void) {
         format_rtc_short(&clk, disp_buffer);
         disp_print(disp_buffer);
     }    
+}
+
+static void state_djmp(uint32_t now) {
+    uint8_t btn;
+    memset(format_array, '_', 4);
+    
+    if(s_val8[0] > 0) format_array[0] = nibble_to_hex(s_val16[0] >> 12);
+    if(s_val8[0] > 1) format_array[1] = nibble_to_hex(s_val16[0] >> 8);
+    if(s_val8[0] > 2) format_array[2] = nibble_to_hex(s_val16[0] >> 4);
+    if(s_val8[0] > 3) format_array[3] = nibble_to_hex(s_val16[0] >> 0);
+    
+    sprintf(disp_buffer, "JMP @%c%c%c%c", format_array[0], format_array[1], format_array[2], format_array[3]);
+    disp_print(disp_buffer);
+   
+    if(s_val8[0] > 3) {
+        sm_state = KP_JMP;
+        spkr_beep(0x30, 100);
+        delay_ms_ctc(200);
+        return;
+    }
+    
+    btn = read_btn();
+    if((btn != 0xFF) && (s_val8[0] <= 3)) { 
+        sm_state_time = now; 
+        s_val16[0] |= (btn << (12 - (4 * (s_val8[0]%4))));
+        s_val8[0]++;
+    }
 }
 
 static void state_oport(uint32_t now) {
