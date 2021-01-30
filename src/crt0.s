@@ -10,12 +10,17 @@
 	.globl  _getchar
 	.globl  _console_dataAvailable
 	
+	;; Other I/O functions to export
+	.globl _xmodem_receive
+	.globl _xmodem_upload
+	
 	;; Hardware functions to export
 	.globl  _disp_send_byte
 	.globl  _disp_clear
 	.globl  _disp_print
 	.globl  _kp_selectColumn
 	.globl  _kp_readRows
+	.globl  _spkr_beep
 
     ;; ISR to export
     .globl _pio_isr
@@ -49,6 +54,9 @@ _str_appname:
 	.dw     #_disp_print
 	.dw     #_kp_selectColumn
 	.dw     #_kp_readRows
+	.dw     #_spkr_beep
+	.dw     #_xmodem_receive
+	.dw     #_xmodem_upload
 	
 	.org	0x7FFE ; Add a dummy word here just to make sure the eprom is filled up to 32k
 	.dw	0xAAAA
