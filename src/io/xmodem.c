@@ -6,7 +6,6 @@
 #include <hardware/dart.h>
 #include <hardware/ctc.h>
 
-#include "console.h"
 #include "utilities.h"
 
 #define SOH     0x01
@@ -26,6 +25,7 @@
 
 static uint8_t packet_buf[XMODEM_PKT_SIZE];
 
+static uint8_t xmodem_send_sync(uint16_t timeout);
 static uint8_t xmodem_receive_sync(uint8_t tries);
 static uint8_t xmodem_recv_pkt(void);
 static uint8_t xmodem_check_packet(void);
@@ -86,6 +86,69 @@ uint8_t xmodem_receive(uint8_t* dest) {
 }
 
 uint8_t xmodem_upload(uint8_t* source, uint16_t len) {
+    uint8_t response;
+    uint8_t pkt_num = 1;
+    uint8_t pkt_size = 0;
+    uint8_t retries = 0xFF;
+    uint32_t now;
+
+
+    while(len && retries--) {
+        response = NACK;
+        pkt_size = XMODEM_DATA_SIZE < len ? XMODEM_DATA_SIZE : len;
+        memset(packet_buf, 0, XMODEM_PKT_SIZE);
+        memcpy(packet_buf + XMODEM_DATA_OFFSET, source, pkt_size);
+        
+        packet_buf[0] = SOH;
+        packet_buf[1] = pkt_num;
+        packet_buf[2] = ~pkt_num;
+        
+        for(uint8_t idx = 3; idx < XMODEM_PKT_SIZE-2; idx++) packet_buf[131] += packet_buf[idx];
+        
+        for(uint8_t idx = 0; idx < XMODEM_PKT_SIZE-1; idx++) dart_write(PORT_B, packet_buf[idx]);
+        now = get_tick();
+        
+        while((get_tick() - now) < XMODEM_XFER_TIMEOUT) {
+            if(dart_dataAvailable(PORT_B)) {
+                response = dart_read(PORT_B);
+                if(response == ACK) {
+                    retries = 0xFF;
+                    break;
+                } else break;
+            }
+            
+            __asm nop __endasm;
+        }
+        
+        if(response != ACK) continue; // Don't go to the next packet. Resend this!
+        
+        len -= pkt_size;
+        source += pkt_size;
+        pkt_num++;
+    }
+    
+    
+    // Send the EOT
+    if(retries) {
+        retries = 0xFF;
+        while(retries--) {
+            now = get_tick();
+            dart_write(PORT_B, EOT); // End of transmission
+            while((get_tick() - now) < XMODEM_XFER_TIMEOUT) {
+                if(dart_dataAvailable(PORT_B)) {
+                    if(dart_read(PORT_B) == ACK)  {
+                        dart_write(PORT_B, EOT); 
+                        delay_ms_ctc(5000);
+                        return 1;
+                    } else break;
+                }
+                
+                delay_ms_ctc(100);
+            }
+        }
+        
+    }
+    
     return 0;
 }
 
@@ -101,6 +164,23 @@ static uint8_t xmodem_receive_sync(uint8_t tries) {
         }
     }
 
+    return 0;
+}
+
+static uint8_t xmodem_send_sync(uint16_t timeout) {
+    uint32_t now = get_tick();
+    uint8_t ch;
+    
+    while((get_tick() - now) < timeout) {
+        if(dart_dataAvailable(PORT_B)) {
+           ch = dart_read(PORT_B);
+           if(ch == SYNC) return 1;
+           else return 0; // Got something else...
+        }
+        
+        __asm nop __endasm;
+    }
+    
     return 0;
 }
 

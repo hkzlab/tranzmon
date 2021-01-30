@@ -186,7 +186,8 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 		    disp_clear();
 		    disp_print("XMODEM UPLOAD");
 		    printf("\n\rXMODEM upload %04X bytes from %04X\n\r", length, address);
-
+        	delay_ms_ctc(8000);
+        	
 			if(!xmodem_upload((uint8_t*)address, length)) console_printString("\n\rUpload failed!\n\r");
 			else console_printString("\n\rUpload completed.\n\r");
 			
