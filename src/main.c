@@ -16,7 +16,7 @@
 
 #include "utilities.h"
 
-#define FREE_RAM_START 0x8800
+#define FREE_RAM_START 0x8400
 
 #define CMD_BUF_SIZE 16
 
