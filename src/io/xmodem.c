@@ -200,7 +200,7 @@ static uint8_t xmodem_recv_pkt(void) {
 }
 
 static void xmodem_packet2ram(uint8_t *ptr) {
-    for(uint8_t idx = 0; idx < XMODEM_DATA_SIZE; idx++) ptr[idx] = packet_buf[idx];
+    for(uint8_t idx = 0; idx < XMODEM_DATA_SIZE; idx++) ptr[idx] = packet_buf[idx+XMODEM_DATA_OFFSET];
 }
 
 
