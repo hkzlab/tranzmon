@@ -143,13 +143,13 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 
 	switch(cmd[0]) {
 	    case 'T':
-	        if(idx > 16) {
+	        if(idx > 15) {
 	            console_printString(MONITOR_ERR_MSG);
 		        return;
 	        }
 	    
 	        val = 1;
-	        for(uint8_t i = 2; i < 16; i+=2) if(!monitor_strIsValidHex8(&cmd[i])) { val = 0; break; };
+	        for(uint8_t i = 2; i < 15; i++) if(!monitor_charIsValidHex4(cmd[i])) { val = 0; break; };
 	        
 	        if(val) { // Valid date given, setting the clock
 	            // ddMMyyhhmmssdw
@@ -159,7 +159,7 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 	            clk.h = monitor_parseU8(&cmd[8]);
 	            clk.m = monitor_parseU8(&cmd[10]);
 	            clk.s = monitor_parseU8(&cmd[12]);	
-	            clk.dow = monitor_parseU8(&cmd[14]);	                        
+	            clk.dow = monitor_parseU4(cmd[14]);	                        
 	            rtc_set(&clk);
 	            
 	            printf("\r\nRTC updated!");
@@ -346,7 +346,7 @@ static void monitor_parse_command(char *cmd, uint8_t idx) {
 	                "\n\rR xxxx yy        -> Print yy 16b blocks of RAM starting @xxxx" \
 	                "\n\rX xxxx           -> Download data via XMODEM @xxxx" \
 	                "\n\rU xxxx yyyy      -> Upload yyyy bytes via XMODEM  from xxxx" \
-	                "\n\rT ddMMyyhhmmssdw -> Show or set current date" \
+	                "\n\rT ddMMyyhhmmssD  -> Show or set current date" \
 	                "\n\r");
 	        break;
 		default:

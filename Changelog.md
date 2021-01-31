@@ -1,5 +1,7 @@
 # Changelog
 
-## 1.1
-* First release
-* Add support for IDE booting (_N8VEM IDE board_)
+## 0.9 *PRE-RELEASE*
+
+- Keypad support for memory read, read, jump, io, rtc
+- Console support for memory read, write, jump, rtc, io, upload and download
+

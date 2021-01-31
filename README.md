@@ -1,22 +1,35 @@
 # TranzMON
 
+TranzMON is a resident monitor for the Tranz 330 POS terminals.
+It turns the POS into a multi purpose Z80 based computer that can also be used as an educational tool.
+
+It's sufficient to burn the binary into a 27C256 EPROM and put it in place of the original one at U6 on the control board.
+
 ## Supported functions
 
-- Port IN/OUT
-- Memory READ/WRITE
-- Jump execution to an address
-- XModem data upload
+- Serial console at 19200bps 8-n-1
+- External keypad/VFD input
 
-## Monitor commands
+- Port IN/OUT (keypad and console)
+- Memory READ/WRITE (keypad and console)
+- Jump execution to an address (keypad and console)
+- Memory upload/download via XMODEM (console)
+- RTC (console and keypad)
 
-- **X**_aaaa_		- Loads a binary file to memory at address "aaaa". EG: X5000
-- **I**_aa_		- INputs a byte from port address "aa". EG: I01
-- **O**_aa_**,**_dd_	- OUTputs byte "dd" to port "aa". EG: O01,AA
-- **R**_aaaa_		- Reads a byte from memory address "aaaa". EG: R5000
-- **W**_aaaa_**,**_dd_	- Writes byte "dd" to memory address "aaaa". EG: W5000,04
-- **J**_aaaa_		- Jumps execution to address "aaaa". EG: J3000
+### Console commands
+
+- O xx yy          -> Output value yy to port xx
+- I xx             -> Input from port xx
+- J xxxx           -> Jump @xxxx
+- F xxxx yy zz     -> Fill zz bytes of RAM with yy starting @xxxx
+- W xxxx yy        -> Write zz @xxxx
+- R xxxx yy        -> Print yy 16b blocks of RAM starting @xxxx
+- X xxxx           -> Download data via XMODEM @xxxx
+- U xxxx yyyy      -> Upload yyyy bytes via XMODEM  from xxxx
+- T ddMMyyhhmmssdw -> Show or set current date (dw is day of week, starts at 00 with Sunday)
+
+## Keypad commands
 
 ## Function table
 
-At the end of the EPROM, there is an address table for some useful functions that can be reused by other code:
 
