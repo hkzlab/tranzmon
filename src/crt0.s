@@ -14,6 +14,10 @@
 	.globl _xmodem_receive
 	.globl _xmodem_upload
 	
+	;; Misc functions to export
+	.globl _delay_ms
+	.globl _delay_ms_ctc
+	
 	;; Hardware functions to export
 	.globl  _disp_send_byte
 	.globl  _disp_clear
@@ -57,6 +61,8 @@ _str_appname:
 	.dw     #_spkr_beep
 	.dw     #_xmodem_receive
 	.dw     #_xmodem_upload
+	.dw     #_delay_ms
+	.dw     #_delay_ms_ctc
 	
 	.org	0x7FFE ; Add a dummy word here just to make sure the eprom is filled up to 32k
 	.dw	0xAAAA
