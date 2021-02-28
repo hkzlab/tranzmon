@@ -69,6 +69,7 @@ _str_appname:
 
 	;; Reset vector
 	.org 	0x0000
+	di ;; Disable the interrupts
 	jp  init
 	
 	;; Interrupt vector table
@@ -86,8 +87,6 @@ inttbl:
 	
 	.org    0x0040
 init:
-    di ;; Disable the interrupts for now
-   
     ;; Stack at the top of memory.
     ld sp,#0x83FF ;; Reserve 1kb of ram for the monitor
 
