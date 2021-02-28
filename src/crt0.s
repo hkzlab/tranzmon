@@ -86,9 +86,10 @@ inttbl:
 	
 	.org    0x0040
 init:
-	;; Stack at the top of memory.
-	;;ld	sp,#0xFFFF
-	ld sp,#0x83FF ;; Reserve 1kb of ram for the monitor
+    di ;; Disable the interrupts for now
+   
+    ;; Stack at the top of memory.
+    ld sp,#0x83FF ;; Reserve 1kb of ram for the monitor
 
     ;; Setup the interrupts: http://www.z80.info/1653.htm
     ;; In mode 2, when interrupting, a device will automatically place a vector address (8 bits) on the data bus
@@ -99,8 +100,6 @@ init:
     xor a ;; Interrupt vectors page 0
     ld i,a
     
-    di ;; Disable the interrupts for now
-
     ;; Clear the RAM
     xor a           ;; Clear register 'a'
     ;;ld bc,#0x8000   ;; Times that the ldir command will repeat
