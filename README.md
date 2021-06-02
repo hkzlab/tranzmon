@@ -5,6 +5,8 @@ It turns the POS into a multi purpose Z80 based computer that can also be used a
 
 It's sufficient to burn the binary into a 27C256 EPROM and put it in place of the original one at U6 on the control board.
 
+![TranzMON running](pics/tranzmon.jpg)
+
 ## Supported functions
 
 - Serial console at 19200bps 8-n-1
